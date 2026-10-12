@@ -1,0 +1,22 @@
+[project]
+name = "edukacyjnysymulatorszyfrowklasycznychikryptoanalizy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Filip", email = "paczula.filip21@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.143.0",
+    "nltk>=3.10.3",
+    "numpy>=2.5.4",
+    "streamlit>=1.65.0",
+]
+
+[project.scripts]
+edukacyjnysymulatorszyfrowklasycznychikryptoanalizy = "edukacyjnysymulatorszyfrowklasycznychikryptoanalizy:main"
+
+[build-system]
+requires = ["uv_build>=0.12.0,<0.13.0"]
+build-backend = "uv_build"
