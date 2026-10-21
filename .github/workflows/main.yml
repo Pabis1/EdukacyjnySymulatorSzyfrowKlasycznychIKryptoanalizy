@@ -1,0 +1,17 @@
+name: Uruchomienie testów (Docker Compose)
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pobranie kodu repozytorium
+        uses: actions/checkout@v4
+
+      - name: Uruchomienie testów przez docker-compose
+        run: |
+          docker-compose -f docker-compose.yml up --build --abort-on-container-exit
