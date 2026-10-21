@@ -25,4 +25,9 @@ def caesar_encrypt(payload: CaesarRequest, cipher: CaesarCipherDep) -> CaesarRes
     return CaesarResponse.model_validate(cipher.encrypt(payload.text, payload.shift))
 
 
+@api.post("/caesar/decrypt", response_model=CaesarResponse, tags=["caesar"])
+def caesar_decrypt(payload: CaesarRequest, cipher: CaesarCipherDep) -> CaesarResponse:
+    return CaesarResponse.model_validate(cipher.decrypt(payload.text, payload.shift))
+
+
 app.include_router(api)
