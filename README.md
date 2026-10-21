@@ -27,3 +27,7 @@ uv sync
 ```
 
 Then either activate the environment with `source .venv/bin/activate` or prefix commands with `uv run`.
+
+## Dokumentacja
+
+[Core - Algorytmy szyfrujące i deszyfrujące](https://docs.google.com/document/d/1cEw6kwm_8KB52Q1iBX7rSoaDLs0WHUOqEHmT_zJW2q8/edit?usp=sharing)
