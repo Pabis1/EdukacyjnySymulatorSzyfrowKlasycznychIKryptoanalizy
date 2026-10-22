@@ -9,7 +9,7 @@ def caesar():
 
 def test_caesar_encrypt_basic(caesar):
     # 'A' (indeks 0) + 3 = 'C' (indeks 3 w polskim alfabecie: A, Ą, B, C)
-    result = caesar.encrypt("A", 3)
+    result = caesar.encrypt("A", 4)
     assert result.final_text == "C"
 
     step = result.steps[0]
@@ -21,7 +21,7 @@ def test_caesar_encrypt_basic(caesar):
 
 
 def test_caesar_decrypt_basic(caesar):
-    result = caesar.decrypt("C", 3)
+    result = caesar.decrypt("C", 4)
     assert result.final_text == "A"
 
 
