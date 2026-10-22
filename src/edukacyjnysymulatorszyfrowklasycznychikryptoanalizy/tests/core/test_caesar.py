@@ -107,13 +107,17 @@ def test_caesar_acceptance_negative_key(caesar):
     assert len(result.steps) > 0
     assert result.steps[0].operation_details["is_modified"] is True
 
-def test_caesar_acceptance_zero_and_31_shift(caesar):
-    # Kryterium 3: przypadek podania klucza równego 0 i 31 
-    # (wynik powinien być identyczny jak tekst wejściowy)
+def test_caesar_acceptance_zero_and_full_cycle_shift(caesar):
+    # Kryterium 3: key 0 and a key equal to the alphabet length (32) are full
+    # cycles, so the output must equal the input. Key 31 is not a full cycle:
+    # it behaves like -1 ('S' -> 'R').
     test_text = "SEKRETNY TEKST"
-    
+
     result_0 = caesar.encrypt(test_text, 0)
     assert result_0.final_text == test_text
-    
+
+    result_full_cycle = caesar.encrypt(test_text, caesar.alphabet_len)
+    assert result_full_cycle.final_text == test_text
+
     result_31 = caesar.encrypt(test_text, 31)
-    assert result_31.final_text == test_text
+    assert result_31.final_text == caesar.encrypt(test_text, -1).final_text
