@@ -60,9 +60,27 @@ body {
   font-size: 14px;
 }
 
-.active-link {
-  color: var(--accent-primary);
+.nav-link-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.nav-link-btn:hover:not(:disabled) {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link-btn.active {
+  color: #fff;
+  background: var(--accent-primary);
+  box-shadow: 0 2px 8px var(--accent-glow);
 }
 
 /* Header */
@@ -381,6 +399,143 @@ body {
   font-size: 13px;
   font-weight: bold;
   color: #34d399;
+}
+
+/* Dashboard / Strona Główna */
+.dashboard-container {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.hero-title {
+  font-size: 36px;
+  font-weight: 800;
+  margin: 12px 0 10px 0;
+  color: #f8fafc;
+}
+
+.hero-subtitle {
+  color: var(--text-muted);
+  font-size: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.ciphers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.cipher-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.cipher-card:hover:not(.disabled) {
+  border-color: var(--accent-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.15);
+}
+
+.cipher-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cipher-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cipher-icon {
+  font-size: 32px;
+}
+
+.cipher-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.cipher-badge.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.cipher-badge.locked {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.cipher-category {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.cipher-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 10px 0;
+}
+
+.cipher-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 0 0 20px 0;
+  flex: 1;
+}
+
+.cipher-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.back-bar {
+  max-width: 1000px;
+  margin: 20px auto 0 auto;
+  padding: 0 20px;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
 }
 
 /* Footer */
