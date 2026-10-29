@@ -121,3 +121,35 @@ def test_caesar_acceptance_zero_and_full_cycle_shift(caesar):
 
     result_31 = caesar.encrypt(test_text, 31)
     assert result_31.final_text == caesar.encrypt(test_text, -1).final_text
+def test_caesar_stress_long_text(caesar):
+    # Weryfikacja wydajności przy przeliczaniu ogromnej tablicy kroków
+    long_text = "TESTOWY TEKST 123! " * 2000
+    shift = 15
+    
+    result = caesar.encrypt(long_text, shift)
+    
+    assert len(result.final_text) == len(long_text)
+    assert len(result.steps) == len(long_text)
+
+
+def test_caesar_extremely_large_negative_shift(caesar):
+    # Test zabezpieczający poprawność arytmetyki dla ogromnych kluczy ujemnych
+    shift = -320005
+    test_text = "BEZPIECZEŃSTWO"
+    
+    result = caesar.encrypt(test_text, shift)
+    decrypted = caesar.decrypt(result.final_text, shift)
+    
+    assert decrypted.final_text == test_text
+
+
+def test_caesar_type_error_handling_string_shift(caesar):
+    # Celowe wstrzyknięcie błędnego typu do przesunięcia (string zamiast int)
+    with pytest.raises(TypeError):
+        caesar.encrypt("TEKST", "15") 
+
+
+def test_caesar_float_shift_handling(caesar):
+    # Sprawdzenie zachowania przy liczbach zmiennoprzecinkowych
+    with pytest.raises(TypeError):
+        caesar.encrypt("TEKST", 3.14)
