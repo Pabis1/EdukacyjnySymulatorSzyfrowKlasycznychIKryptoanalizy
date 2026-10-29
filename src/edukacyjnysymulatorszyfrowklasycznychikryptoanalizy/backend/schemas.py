@@ -2,18 +2,14 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .types import AlphabetIndex, CipherMode, InputText, Shift
+from .types import AlphabetIndex, CipherMode, InputText, Keyword, Shift
 
 
 class Schema(BaseModel):
     model_config = ConfigDict(from_attributes=True, frozen=True)
 
 
-class CaesarRequest(Schema):
-    model_config = ConfigDict(extra="forbid")
-
-    text: InputText
-    shift: Shift
+# --- Shared ---
 
 
 class ModifiedCharDetails(Schema):
@@ -29,15 +25,38 @@ class UnmodifiedCharDetails(Schema):
     reason: str
 
 
-CharDetails = Annotated[ModifiedCharDetails | UnmodifiedCharDetails, Field(discriminator="is_modified")]
-
-
 class CipherStepSchema(Schema):
     index: int = Field(ge=0, description="Position of the character in the input text.")
     input_char: str
     output_char: str
-    operation_details: CharDetails
     description: str
+
+
+class CipherInfo(Schema):
+    cipher_type: Literal["Caesar", "Vigenere"]
+    alphabet: str
+    alphabet_len: int = Field(gt=0)
+
+
+class CiphersResponse(Schema):
+    ciphers: list[CipherInfo]
+
+
+# --- Caesar ---
+
+
+class CaesarRequest(Schema):
+    model_config = ConfigDict(extra="forbid")
+
+    text: InputText
+    shift: Shift
+
+
+CaesarCharDetails = Annotated[ModifiedCharDetails | UnmodifiedCharDetails, Field(discriminator="is_modified")]
+
+
+class CaesarStepSchema(CipherStepSchema):
+    operation_details: CaesarCharDetails
 
 
 class CaesarMetadata(Schema):
@@ -49,11 +68,40 @@ class CaesarMetadata(Schema):
 
 class CaesarResponse(Schema):
     final_text: str
-    steps: list[CipherStepSchema]
+    steps: list[CaesarStepSchema]
     metadata: CaesarMetadata
 
 
-class CaesarInfoResponse(Schema):
-    cipher_type: Literal["Caesar"] = "Caesar"
-    alphabet: str
-    alphabet_len: int = Field(gt=0)
+# --- Vigenère ---
+
+
+class VigenereRequest(Schema):
+    model_config = ConfigDict(extra="forbid")
+
+    text: InputText
+    keyword: Keyword
+
+
+class VigenereModifiedCharDetails(ModifiedCharDetails):
+    key_char: str = Field(description="Keyword letter that determined the shift for this character.")
+
+
+VigenereCharDetails = Annotated[
+    VigenereModifiedCharDetails | UnmodifiedCharDetails, Field(discriminator="is_modified")
+]
+
+
+class VigenereStepSchema(CipherStepSchema):
+    operation_details: VigenereCharDetails
+
+
+class VigenereMetadata(Schema):
+    cipher_type: Literal["Vigenere"]
+    mode: CipherMode
+    keyword: str = Field(description="Keyword after normalization: uppercased, characters outside the alphabet removed.")
+
+
+class VigenereResponse(Schema):
+    final_text: str
+    steps: list[VigenereStepSchema]
+    metadata: VigenereMetadata
