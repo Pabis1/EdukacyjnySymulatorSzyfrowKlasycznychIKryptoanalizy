@@ -22,11 +22,11 @@ const CIPHER_MODULES = [
         available: true,
     },
     {
-        id: 'affine',
-        name: 'Szyfr Afiniczny',
-        category: 'Kryptografia Matematyczna',
-        badge: 'Zaawansowany',
-        description: 'Szyfr łączący operacje mnożenia i dodawania modulo alfabetu.',
+        id: 'substitution',
+        name: 'Szyfr Podstawieniowy',
+        category: 'Kryptografia Klasyczna',
+        badge: 'Średniozaawansowany',
+        description: 'Monoalfabetyczny szyfr operujący na pełnym, zdefiniowanym przez użytkownika alfabecie podstawieniowym. Wymaga klucza o długości całego alfabetu.',
         icon: '',
         available: false,
     },
@@ -238,7 +238,7 @@ function CaesarSimulator({ onBack }) {
             </div>
 
             <header className="header">
-                <span className="badge">Symulator Kryptograficzny (Na żywo)</span>
+                <span className="badge">Symulator Kryptograficzny</span>
                 <h1 className="title">Szyfr Cezara</h1>
                 <p className="subtitle">
                     Wpisz tekst i ustaw przesunięcie, aby natychmiast zobaczyć wynik i matematyczną analizę krok po kroku.
@@ -303,25 +303,6 @@ function CaesarSimulator({ onBack }) {
                             <span>15</span>
                             <span>31</span>
                         </div>
-                    </div>
-
-                    <div className="live-status">
-                        <span
-                            className={`live-dot ${
-                                loading
-                                    ? 'live-dot--loading'
-                                    : text.trim()
-                                    ? 'live-dot--active'
-                                    : ''
-                            }`}
-                        />
-                        <span className="live-text">
-                            {loading
-                                ? 'Przetwarzanie na żywo...'
-                                : text.trim()
-                                ? 'Wynik aktualizowany na żywo'
-                                : 'Wpisz tekst powyżej, aby zobaczyć wynik na żywo'}
-                        </span>
                     </div>
 
                     {error && (
@@ -484,7 +465,7 @@ function VigenereSimulator({ onBack }) {
                 <span className="badge">Symulator Kryptograficzny (Na żywo)</span>
                 <h1 className="title">Szyfr Vigenère’a</h1>
                 <p className="subtitle">
-                    Wpisz wiadomość i słowo kluczowe, aby obserwować działanie szyfru polialfabetycznego w czasie rzeczywistym.
+                    Wpisz wiadomość i słowo kluczowe, aby obserwować działanie szyfru polialfabetycznego.
                 </p>
             </header>
 
@@ -544,25 +525,6 @@ function VigenereSimulator({ onBack }) {
                         />
                         <span className="field-hint">
                             Litery klucza określają cykliczne przesunięcia kolejnych znaków w polskim alfabecie.
-                        </span>
-                    </div>
-
-                    <div className="live-status">
-                        <span
-                            className={`live-dot ${
-                                loading
-                                    ? 'live-dot--loading'
-                                    : text.trim() && keyword.trim()
-                                    ? 'live-dot--active'
-                                    : ''
-                            }`}
-                        />
-                        <span className="live-text">
-                            {loading
-                                ? 'Przetwarzanie na żywo...'
-                                : text.trim() && keyword.trim()
-                                ? 'Wynik aktualizowany na żywo'
-                                : 'Wpisz tekst i klucz, aby zobaczyć wynik na żywo'}
                         </span>
                     </div>
 
@@ -679,7 +641,7 @@ export default function App() {
                         <span className="badge">Akademia Kryptografii</span>
                         <h1 className="hero-title">Wybierz moduł i rozpocznij naukę</h1>
                         <p className="hero-subtitle">
-                            Interaktywne laboratorium algorytmów szyfrujących. Eksperymentuj, analizuj i poznawaj tajniki bezpieczeństwa danych w czasie rzeczywistym.
+                            Interaktywne laboratorium algorytmów szyfrujących. Eksperymentuj, analizuj i poznawaj tajniki bezpieczeństwa danych.
                         </p>
                     </div>
 
