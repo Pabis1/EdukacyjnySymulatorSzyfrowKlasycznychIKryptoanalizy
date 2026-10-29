@@ -65,7 +65,7 @@ function StepsVisualization({ cipherPackage }) {
                 <div>
                     <h2 className="steps-title">Wizualizacja transformacji krok po kroku</h2>
                     <p className="steps-subtitle">
-                        Szczegółowe dane z paczki odpowiedzi dla każdego znaku tekstu.
+                        Szczegółowe dane dla każdego znaku tekstu.
                     </p>
                 </div>
                 <div className="steps-stats">
@@ -462,7 +462,7 @@ function VigenereSimulator({ onBack }) {
             </div>
 
             <header className="header">
-                <span className="badge">Symulator Kryptograficzny (Na żywo)</span>
+                <span className="badge">Symulator Kryptograficzny</span>
                 <h1 className="title">Szyfr Vigenère’a</h1>
                 <p className="subtitle">
                     Wpisz wiadomość i słowo kluczowe, aby obserwować działanie szyfru polialfabetycznego.
