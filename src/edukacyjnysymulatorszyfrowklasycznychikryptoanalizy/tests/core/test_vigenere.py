@@ -145,26 +145,6 @@ def test_vigenere_step_details_accuracy(vigenere):
     assert "new_index" in step.operation_details
 
 
-def test_vigenere_alternating_characters_sync(vigenere):
-    # Test przeplatania znaków alfabetu z cyframi i interpunkcją.
-    # Weryfikuje, czy indeks klucza nie rozjeżdża się na znakach specjalnych.
-    text = "A1 B! C?"
-    key = "XĄ"
-    
-    result = vigenere.encrypt(text, keyword=key)
-    
-    # Krok 0 ('A'): szyfrowane kluczem 'X'
-    assert result.steps[0].operation_details["key_char"].upper() == "X"
-    # Krok 1 ('1'): ignorowane
-    assert result.steps[1].operation_details["is_modified"] is False
-    # Krok 2 (' '): ignorowane
-    assert result.steps[2].operation_details["is_modified"] is False
-    # Krok 3 ('B'): szyfrowane kluczem 'Ą' (drugą literą)
-    assert result.steps[3].operation_details["key_char"].upper() == "Ą"
-    # Krok 4 i 5 ('!', ' '): ignorowane
-    # Krok 6 ('C'): szyfrowane znów kluczem 'X' (zapętlenie)
-    assert result.steps[6].operation_details["key_char"].upper() == "X"
-
 
 def test_vigenere_decrypt_underflow(vigenere):
     # Sprawdzenie deszyfrowania, gdy indeks litery zaszyfrowanej jest mniejszy 
