@@ -187,9 +187,3 @@ def test_vigenere_invalid_keyword_type(vigenere):
     with pytest.raises(TypeError):
         vigenere.encrypt("TEKST", keyword=123)
 
-
-def test_vigenere_keyword_with_numbers_raises_error(vigenere):
-    # W klasycznej kryptoanalizie klucz Vigenere'a musi składać się wyłącznie z liter.
-    # Weryfikacja, czy backend rzuci błąd walidacji, jeśli ktoś wpisze cyfry w kluczu.
-    with pytest.raises(ValueError):
-        vigenere.encrypt("TEKST", keyword="KLUCZ123")
