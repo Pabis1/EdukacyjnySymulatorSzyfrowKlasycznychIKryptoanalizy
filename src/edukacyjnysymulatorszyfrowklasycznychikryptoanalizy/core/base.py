@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+
 from .models import CipherResult
+
 
 class BaseCipher(ABC):
     """Abstrakcyjny kontrakt dla algorytmów szyfrujących."""

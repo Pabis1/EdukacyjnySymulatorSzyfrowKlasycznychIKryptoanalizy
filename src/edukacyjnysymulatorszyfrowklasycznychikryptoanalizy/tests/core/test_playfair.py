@@ -8,7 +8,7 @@ def playfair():
 
 
 def test_playfair_matrix_generation(playfair):
-    char_to_pos, pos_to_char, matrix_1d = playfair._generate_matrix("JAJBKO")
+    _char_to_pos, _pos_to_char, matrix_1d = playfair._generate_matrix("JAJBKO")
     assert matrix_1d[0] == 'I'
     assert matrix_1d[1] == 'A'
     assert 'J' not in matrix_1d

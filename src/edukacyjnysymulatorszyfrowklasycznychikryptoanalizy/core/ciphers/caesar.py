@@ -1,6 +1,7 @@
 from ..base import BaseCipher
 from ..models import CipherResult, CipherStep
 
+
 class CaesarCipher(BaseCipher):
     def __init__(self, alphabet: str = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ"):
         self.alphabet = alphabet
