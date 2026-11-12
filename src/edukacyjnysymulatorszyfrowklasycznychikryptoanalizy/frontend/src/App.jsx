@@ -32,12 +32,12 @@ const CIPHER_MODULES = [
         icon: '',
         available: true,
     },
-    {
-        id: 'substitution',
-        name: 'Szyfr Podstawieniowy',
+{
+        id: 'playfair',
+        name: 'Szyfr Playfair',
         category: 'Kryptografia Klasyczna',
         badge: 'Średniozaawansowany',
-        description: 'Monoalfabetyczny szyfr operujący na pełnym, zdefiniowanym przez użytkownika alfabecie podstawieniowym. Wymaga klucza o długości całego alfabetu.',
+        description: 'Pierwszy w historii praktyczny szyfr digraficzny. Szyfruje pary liter wykorzystując specjalną macierz (zazwyczaj 5x5) wygenerowaną na podstawie słowa kluczowego.',
         icon: '',
         available: false,
     },
@@ -262,8 +262,11 @@ function CaesarSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
                 <p className="subtitle">
                     Wpisz tekst i ustaw przesunięcie, aby natychmiast zobaczyć wynik i matematyczną analizę krok po kroku.
                 </p>
+                {/* TUTAJ DODAJEMY PRZYCISK MODALA: */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                    <CipherHistoryInfo cipherType="caesar" />
+                </div>
             </header>
-
             <div className="cipher-content-layout">
                 <div className="cipher-content-layout__main">
                     <main className="card">
@@ -387,11 +390,6 @@ function CaesarSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
 
                     <StepsVisualization cipherPackage={cipherPackage} />
                 </div>
-
-                {/* Boczny panel / Accordion z historią i kryptoanalizą */}
-                <div className="cipher-content-layout__sidebar">
-                    <CipherHistoryInfo cipherType="caesar" />
-                </div>
             </div>
         </div>
     );
@@ -507,6 +505,10 @@ function VigenereSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
                 <p className="subtitle">
                     Wpisz wiadomość i słowo kluczowe, aby obserwować działanie szyfru polialfabetycznego.
                 </p>
+                {/* TUTAJ DODAJEMY PRZYCISK MODALA: */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                    <CipherHistoryInfo cipherType="vigenere" />
+                </div>
             </header>
 
             <div className="cipher-content-layout">
@@ -632,10 +634,7 @@ function VigenereSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
                     <StepsVisualization cipherPackage={cipherPackage} />
                 </div>
 
-                {/* Boczny panel / Accordion z historią i kryptoanalizą */}
-                <div className="cipher-content-layout__sidebar">
-                    <CipherHistoryInfo cipherType="vigenere" />
-                </div>
+            
             </div>
         </div>
     );

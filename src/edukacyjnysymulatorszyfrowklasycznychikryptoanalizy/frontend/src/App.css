@@ -864,25 +864,20 @@
 /* Układ główny z panelem bocznym (Sidebar / Accordion) */
 .cipher-view-container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1040px; /* Zmniejszono do szerokości głównej karty */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 24px;
+  margin: 0 auto; /* Wyśrodkowanie */
 }
 
 .cipher-content-layout {
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 24px;
-  align-items: start;
-}
-
-@media (min-width: 1024px) {
-  .cipher-content-layout {
-    grid-template-columns: minmax(0, 1fr) 380px;
-  }
 }
 
 .cipher-content-layout__main {
@@ -890,12 +885,6 @@
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  min-width: 0;
-}
-
-.cipher-content-layout__sidebar {
-  width: 100%;
-  min-width: 0;
 }
 
 /* ==========================================================================
