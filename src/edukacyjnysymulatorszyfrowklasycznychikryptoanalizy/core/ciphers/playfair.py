@@ -6,7 +6,6 @@ from ..models import CipherResult, CipherStep
 
 class PlayfairCipher(BaseCipher):
     def __init__(self):
-        # Alfabet łaciński 25 znaków do siatki 5x5 (bez J)
         self.alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
         self.grid_size = 5
 
@@ -54,12 +53,11 @@ class PlayfairCipher(BaseCipher):
         return pairs
 
     def _process(self, text: str, keyword: str, mode: str) -> CipherResult:
-        if not keyword:
-            raise ValueError("Szyfr Playfair wymaga parametru 'keyword'.")
+        if keyword is None:
+            keyword = ""
 
         char_to_pos, pos_to_char, matrix_chars = self._generate_matrix(keyword)
 
-        # Dla deszyfrowania tekst wejściowy jest już sparowany, nie wstawiane jest 'X'
         if mode == "encrypt":
             pairs = self._prepare_text(text)
         else:
@@ -102,7 +100,7 @@ class PlayfairCipher(BaseCipher):
             steps.append(CipherStep(
                 input_char=pair,
                 output_char=new_char1 + new_char2,
-                index=i * 2,  # Odzwierciedlenie przybliżonej pozycji w stringu
+                index=i * 2,
                 operation_details=details,
                 description=desc
             ))
