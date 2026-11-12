@@ -855,3 +855,878 @@
   font-size: 0.75rem;
   border: 1px solid rgba(99, 102, 241, 0.35);
 }
+
+
+/* ==========================================================================
+   Rozszerzenie: Kryptoanaliza, Wizualizacja Przesunięcia i Panele Historyczne
+   ========================================================================== */
+
+/* Układ główny z panelem bocznym (Sidebar / Accordion) */
+.cipher-view-container {
+  width: 100%;
+  max-width: 1040px; /* Zmniejszono do szerokości głównej karty */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin: 0 auto; /* Wyśrodkowanie */
+}
+
+.cipher-content-layout {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.cipher-content-layout__main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   Wizualizacja Klocków Cezara (CaesarShiftVisualizer)
+   ========================================================================== */
+
+.shift-visualizer {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.shift-visualizer__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shift-visualizer__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.shift-visualizer__subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.shift-visualizer__controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.shift-indicator-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.8125rem;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.alpha-switch {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.alpha-switch__btn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.alpha-switch__btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.shift-visualizer__viewport-container {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--bg);
+}
+
+.shift-visualizer__viewport-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.shift-visualizer__viewport-container::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+.shift-visualizer__viewport {
+  display: flex;
+  gap: 14px;
+  min-width: max-content;
+  padding: 6px 4px;
+}
+
+.shift-visualizer__labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 105px;
+  flex-shrink: 0;
+}
+
+.row-tag {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.row-tag small {
+  font-size: 0.6875rem;
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.row-tag--top {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-label);
+}
+
+.row-tag--bottom {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent-text);
+  margin-top: 18px;
+}
+
+.row-direction-arrow {
+  text-align: center;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.shift-visualizer__stage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tiles-row {
+  display: flex;
+  gap: 6px;
+}
+
+.tile {
+  width: 38px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s, border-color 0.2s;
+}
+
+.tile__char {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tile__idx {
+  font-size: 0.625rem;
+  color: var(--text-faint);
+  margin-top: 2px;
+  font-family: monospace;
+}
+
+.tile--top {
+  color: var(--text);
+}
+
+.tile--bottom {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #c7d2fe;
+}
+
+.tile:hover,
+.tile--hovered {
+  transform: translateY(-2px) scale(1.08);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+  background: var(--accent-strong);
+  color: #fff;
+  z-index: 2;
+}
+
+.tile--hovered .tile__idx {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tiles-connectors {
+  display: flex;
+  gap: 6px;
+  height: 18px;
+  align-items: center;
+}
+
+.connector-line {
+  width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  transition: color 0.2s;
+}
+
+.connector-line--active {
+  color: var(--accent);
+  font-weight: 700;
+  transform: scale(1.2);
+}
+
+/* Taśma przesuwna */
+.slider-track-box {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slider-track-box__title {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sliding-ribbon-wrapper {
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border);
+  padding: 6px;
+}
+
+.sliding-ribbon {
+  display: flex;
+  gap: 6px;
+  will-change: transform;
+}
+
+.ribbon-tile {
+  width: 38px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--accent-text);
+}
+
+.ribbon-tile--marker {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.shift-visualizer__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.hint-pill {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.hovered-match-badge {
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 0.8125rem;
+}
+
+/* ==========================================================================
+   Panel Historyczny i Accordion (CipherHistoryInfo)
+   ========================================================================== */
+
+.cipher-history-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.badge--history {
+  background: #312e81;
+  color: #a5b4fc;
+}
+
+.history-panel-title {
+  margin: 8px 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.history-panel-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accordion-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.accordion-item--open {
+  border-color: var(--border-strong);
+}
+
+.accordion-item--vulnerability.accordion-item--open {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.accordion-trigger:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.accordion-icon {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.accordion-title-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.accordion-title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.accordion-summary {
+  font-size: 0.775rem;
+  color: var(--text-faint);
+  line-height: 1.35;
+}
+
+.accordion-arrow {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  padding-top: 4px;
+}
+
+.accordion-body {
+  padding: 14px 16px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-label);
+  border-top: 1px solid var(--border);
+  background: rgba(30, 41, 59, 0.4);
+}
+
+.accordion-body h4 {
+  margin: 14px 0 6px;
+  font-size: 0.9375rem;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.accordion-body p {
+  margin: 0 0 10px;
+}
+
+.history-quote {
+  margin: 10px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: rgba(99, 102, 241, 0.08);
+  font-style: italic;
+  font-size: 0.825rem;
+  color: #cbd5e1;
+  border-radius: 0 6px 6px 0;
+}
+
+.callout {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 0.825rem;
+  line-height: 1.45;
+}
+
+.callout p {
+  margin: 4px 0 0;
+}
+
+.callout--danger {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fca5a5;
+}
+
+.callout--info {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #c7d2fe;
+}
+
+.callout--info ol {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+/* ==========================================================================
+   Moduł Kryptoanalizy (CryptanalysisView)
+   ========================================================================== */
+
+.cryptanalysis-page {
+  width: 100%;
+  max-width: 1120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.badge--crypto {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+.cryptanalysis-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.char-count-badge {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.crypto-textarea {
+  min-height: 100px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.analysis-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.primary-button {
+  padding: 10px 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.analysis-hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.analysis-hint code {
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--accent-text);
+}
+
+/* Statystyki Kryptoanalizy */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card__title {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-card__value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.stat-card__value--ioc {
+  color: var(--accent-text);
+  font-family: monospace;
+}
+
+.stat-card__desc {
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+}
+
+.stat-card--interpretation {
+  grid-column: 1 / -1;
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.stat-card__interpretation-text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+/* Wykres Chart.js */
+.chart-wrapper {
+  margin-top: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chart-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chart-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.chart-legend-badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.chart-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 380px;
+}
+
+/* Przewodnik edukacyjny pod wykresem */
+.crypto-edu-guide {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.crypto-edu-guide h4 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.edu-guide-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.edu-guide-col h5 {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.edu-guide-col p {
+  margin: 0;
+  font-size: 0.825rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+
+/* Płynne okno przesuwania dolnego rzędu klocków Cezara */
+.tiles-row-window {
+  overflow: hidden;
+  padding: 4px 0;
+}
+
+.tiles-row--sliding {
+  will-change: transform;
+}
+
+/* Przycisk wtórny i sekcja wyników Brute Force */
+.secondary-button {
+  padding: 10px 20px;
+  background: var(--bg);
+  color: var(--accent-text);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.brute-force-section {
+  margin-top: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.brute-force-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brute-force-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.brute-force-subtitle {
+  margin-top: 4px;
+  font-size: 0.825rem;
+  color: var(--text-muted);
+}
+
+.brute-force-table-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--bg);
+}
+
+.brute-force-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.brute-force-table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+.brute-force-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.brute-force-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #172033;
+  color: var(--text-label);
+  font-weight: 700;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-strong);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.brute-force-th-key {
+  width: 96px;
+}
+
+.brute-force-row td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.brute-force-row:last-child td {
+  border-bottom: none;
+}
+
+.brute-force-row:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.brute-force-cell-key {
+  white-space: nowrap;
+}
+
+.key-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+.brute-force-cell-result {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--text);
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+.fallback-notice {
+  display: inline-block;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
