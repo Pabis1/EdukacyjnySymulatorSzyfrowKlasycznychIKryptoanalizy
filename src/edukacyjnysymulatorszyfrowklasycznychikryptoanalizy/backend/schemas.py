@@ -2,7 +2,14 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .types import AlphabetIndex, CipherMode, InputText, Keyword, Shift
+from .types import (
+    MAX_BRUTE_FORCE_TEXT_LENGTH,
+    AlphabetIndex,
+    CipherMode,
+    InputText,
+    Keyword,
+    Shift,
+)
 
 
 class Schema(BaseModel):
@@ -70,6 +77,31 @@ class CaesarResponse(Schema):
     final_text: str
     steps: list[CaesarStepSchema]
     metadata: CaesarMetadata
+
+
+class CaesarBruteForceRequest(Schema):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(
+        min_length=1,
+        description=(
+            f"Ciphertext to break. Texts longer than {MAX_BRUTE_FORCE_TEXT_LENGTH} characters "
+            "are rejected with 413 Payload Too Large."
+        ),
+        examples=["ŹCLPH"],
+    )
+
+
+class CaesarBruteForceCandidate(Schema):
+    shift: int = Field(gt=0, description="Shift used to decrypt the ciphertext.")
+    text: str = Field(description="Ciphertext decrypted with this shift.")
+
+
+class CaesarBruteForceResponse(Schema):
+    candidates: list[CaesarBruteForceCandidate] = Field(
+        description="One candidate per non-trivial shift, ordered by shift (1 to alphabet_len - 1)."
+    )
+    alphabet_len: int = Field(gt=0)
 
 
 # --- Vigenère ---

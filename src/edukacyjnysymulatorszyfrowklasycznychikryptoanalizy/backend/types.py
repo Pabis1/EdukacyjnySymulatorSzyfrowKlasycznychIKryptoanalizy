@@ -6,6 +6,8 @@ from pydantic import Field
 MAX_TEXT_LENGTH = 10_000
 MAX_SHIFT_MAGNITUDE = 1_000
 MAX_KEYWORD_LENGTH = 1_000
+# Brute force decrypts the text once per possible shift, so its input is capped lower than 'MAX_TEXT_LENGTH'.
+MAX_BRUTE_FORCE_TEXT_LENGTH = 5_000
 
 
 class CipherMode(StrEnum):

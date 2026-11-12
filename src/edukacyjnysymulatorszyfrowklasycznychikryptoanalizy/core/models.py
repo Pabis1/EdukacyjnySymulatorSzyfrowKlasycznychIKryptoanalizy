@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import Any
+
 
 @dataclass
 class CipherStep:
@@ -7,12 +8,12 @@ class CipherStep:
     input_char: str
     output_char: str
     index: int
-    operation_details: Dict[str, Any]
+    operation_details: dict[str, Any]
     description: str
 
 @dataclass
 class CipherResult:
     """Kompletny wynik operacji przekazywany do Backendu i Frontendu."""
     final_text: str
-    steps: List[CipherStep]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[CipherStep]
+    metadata: dict[str, Any] = field(default_factory=dict)

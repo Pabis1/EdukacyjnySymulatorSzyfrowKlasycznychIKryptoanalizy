@@ -1,8 +1,12 @@
 from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from ..core import caesar_brute_force
 from .deps import CaesarCipherDep, VigenereCipherDep, get_settings
 from .schemas import (
+    CaesarBruteForceCandidate,
+    CaesarBruteForceRequest,
+    CaesarBruteForceResponse,
     CaesarRequest,
     CaesarResponse,
     CipherInfo,
@@ -10,6 +14,7 @@ from .schemas import (
     VigenereRequest,
     VigenereResponse,
 )
+from .types import MAX_BRUTE_FORCE_TEXT_LENGTH
 
 app = FastAPI(title="Classical Ciphers Simulator API", version="0.1.0")
 app.add_middleware(
@@ -40,6 +45,26 @@ def caesar_encrypt(payload: CaesarRequest, cipher: CaesarCipherDep) -> CaesarRes
 @api.post("/caesar/decrypt", response_model=CaesarResponse, tags=["caesar"])
 def caesar_decrypt(payload: CaesarRequest, cipher: CaesarCipherDep) -> CaesarResponse:
     return CaesarResponse.model_validate(cipher.decrypt(payload.text, payload.shift))
+
+
+@api.post(
+    "/caesar/brute-force",
+    response_model=CaesarBruteForceResponse,
+    tags=["caesar"],
+    responses={status.HTTP_413_CONTENT_TOO_LARGE: {"description": "Ciphertext is too long to brute force."}},
+)
+def caesar_brute_force_attack(payload: CaesarBruteForceRequest, cipher: CaesarCipherDep) -> CaesarBruteForceResponse:
+    # Checked here instead of via 'max_length' so the client gets 413, not a generic 422.
+    if len(payload.text) > MAX_BRUTE_FORCE_TEXT_LENGTH:
+        raise HTTPException(
+            status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=f"Ciphertext exceeds the brute force limit of {MAX_BRUTE_FORCE_TEXT_LENGTH} characters.",
+        )
+    results = caesar_brute_force(payload.text, cipher_instance=cipher)
+    return CaesarBruteForceResponse(
+        candidates=[CaesarBruteForceCandidate(shift=shift, text=text) for shift, text in sorted(results.items())],
+        alphabet_len=cipher.alphabet_len,
+    )
 
 
 @api.post("/vigenere/encrypt", response_model=VigenereResponse, tags=["vigenere"])

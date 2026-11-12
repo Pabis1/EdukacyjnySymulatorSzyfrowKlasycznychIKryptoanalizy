@@ -1,5 +1,5 @@
 import re
-from typing import Tuple, List, Dict
+
 from ..base import BaseCipher
 from ..models import CipherResult, CipherStep
 
@@ -9,8 +9,8 @@ class PlayfairCipher(BaseCipher):
         self.alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
         self.grid_size = 5
 
-    def _generate_matrix(self, keyword: str) -> Tuple[
-        Dict[str, Tuple[int, int]], Dict[Tuple[int, int], str], List[str]]:
+    def _generate_matrix(self, keyword: str) -> tuple[
+        dict[str, tuple[int, int]], dict[tuple[int, int], str], list[str]]:
         keyword = keyword.upper().replace("J", "I")
         keyword = re.sub(r'[^A-Z]', '', keyword)
 
@@ -31,7 +31,7 @@ class PlayfairCipher(BaseCipher):
 
         return char_to_pos, pos_to_char, matrix_chars
 
-    def _prepare_text(self, text: str) -> List[str]:
+    def _prepare_text(self, text: str) -> list[str]:
         text = text.upper().replace("J", "I")
         clean_text = re.sub(r'[^A-Z]', '', text)
 

@@ -1,8 +1,8 @@
-from typing import Dict
+
 from ..ciphers.caesar import CaesarCipher
 
 
-def caesar_brute_force(ciphertext: str, cipher_instance: CaesarCipher = None) -> Dict[int, str]:
+def caesar_brute_force(ciphertext: str, cipher_instance: CaesarCipher = None) -> dict[int, str]:
     """
     Wykonuje atak brute force na szyfrogram Cezara, testując wszystkie możliwe przesunięcia.
     Zwraca słownik mapujący użyty klucz na potencjalny tekst jawny.
@@ -10,7 +10,7 @@ def caesar_brute_force(ciphertext: str, cipher_instance: CaesarCipher = None) ->
     if cipher_instance is None:
         cipher_instance = CaesarCipher()
 
-    results: Dict[int, str] = {}
+    results: dict[int, str] = {}
     max_shift = cipher_instance.alphabet_len
 
     # Iteracja przez wszystkie sensowne klucze (od 1 do długości alfabetu - 1)

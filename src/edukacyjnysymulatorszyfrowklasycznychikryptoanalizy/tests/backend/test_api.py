@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from edukacyjnysymulatorszyfrowklasycznychikryptoanalizy.backend.app import app
 from edukacyjnysymulatorszyfrowklasycznychikryptoanalizy.backend.types import (
+    MAX_BRUTE_FORCE_TEXT_LENGTH,
     MAX_KEYWORD_LENGTH,
 )
 
@@ -74,4 +75,33 @@ def test_vigenere_keyword_without_alphabet_letters(client, mode):
 )
 def test_vigenere_invalid_request(client, payload):
     response = client.post("/api/v1/vigenere/encrypt", json=payload)
+    assert response.status_code == 422
+
+
+def test_caesar_brute_force_returns_every_shift(client):
+    ciphertext = client.post("/api/v1/caesar/encrypt", json={"text": "Tajne, hasło!", "shift": 5}).json()["final_text"]
+
+    response = client.post("/api/v1/caesar/brute-force", json={"text": ciphertext})
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["alphabet_len"] == 32
+    assert [c["shift"] for c in body["candidates"]] == list(range(1, 32))
+    assert body["candidates"][4] == {"shift": 5, "text": "Tajne, hasło!"}
+
+
+def test_caesar_brute_force_accepts_text_at_limit(client):
+    response = client.post("/api/v1/caesar/brute-force", json={"text": "A" * MAX_BRUTE_FORCE_TEXT_LENGTH})
+    assert response.status_code == 200
+
+
+def test_caesar_brute_force_rejects_too_long_text(client):
+    response = client.post("/api/v1/caesar/brute-force", json={"text": "A" * (MAX_BRUTE_FORCE_TEXT_LENGTH + 1)})
+    assert response.status_code == 413
+    assert str(MAX_BRUTE_FORCE_TEXT_LENGTH) in response.json()["detail"]
+
+
+@pytest.mark.parametrize("payload", [{"text": ""}, {}, {"text": "ABC", "shift": 3}])
+def test_caesar_brute_force_rejects_invalid_payload(client, payload):
+    response = client.post("/api/v1/caesar/brute-force", json=payload)
     assert response.status_code == 422

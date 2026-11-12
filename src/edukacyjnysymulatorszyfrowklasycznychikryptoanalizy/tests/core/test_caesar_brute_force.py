@@ -1,5 +1,4 @@
-import pytest
-from core import caesar_brute_force, CaesarCipher
+from core import CaesarCipher, caesar_brute_force
 
 
 def test_brute_force_generates_all_keys():
