@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-
+import CaesarShiftVisualizer from './components/CaesarShiftVisualizer';
+import CipherHistoryInfo from './components/CipherHistoryInfo';
+import CryptanalysisView from './components/CryptanalysisView';
 
 const CIPHER_MODULES = [
     {
@@ -18,6 +20,15 @@ const CIPHER_MODULES = [
         category: 'Kryptografia Klasyczna',
         badge: 'Średniozaawansowany',
         description: 'Polialfabetyczny szyfr oparty na powtarzanym słowie kluczowym, który zrewolucjonizował renesansową kryptografię.',
+        icon: '',
+        available: true,
+    },
+    {
+        id: 'cryptanalysis',
+        name: 'Kryptoanaliza / Łamanie Szyfrów',
+        category: 'Kryptoanaliza & Statystyka',
+        badge: 'Wykresy & Analiza',
+        description: 'Wizualizacja statystyk liter w szyfrogramie, wykresy słupkowe z tłem języka polskiego i badanie Indeksu Koincydencji.',
         icon: '',
         available: true,
     },
@@ -48,7 +59,6 @@ const MODES = {
         shiftSign: '-',
     },
 };
-
 
 function StepsVisualization({ cipherPackage }) {
     if (!cipherPackage?.steps || cipherPackage.steps.length === 0) {
@@ -143,10 +153,8 @@ function StepsVisualization({ cipherPackage }) {
     );
 }
 
-
-function CaesarSimulator({ onBack }) {
+function CaesarSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
     const [mode, setMode] = useState('encrypt');
-    const [text, setText] = useState('');
     const [shift, setShift] = useState(3);
     const [result, setResult] = useState('');
     const [cipherPackage, setCipherPackage] = useState(null);
@@ -155,6 +163,15 @@ function CaesarSimulator({ onBack }) {
     const [copied, setCopied] = useState(false);
 
     const modeConfig = MODES[mode];
+
+    const handleTextChange = (newText) => {
+        onTextChange(newText);
+        if (!newText.trim()) {
+            onCiphertextChange('');
+        } else if (mode === 'decrypt') {
+            onCiphertextChange(newText);
+        }
+    };
 
     useEffect(() => {
         if (!text.trim()) {
@@ -201,9 +218,11 @@ function CaesarSimulator({ onBack }) {
                 const data = await response.json();
                 setResult(data.final_text);
                 setCipherPackage(data);
+                onCiphertextChange(mode === 'encrypt' ? data.final_text : text);
             } catch (err) {
                 if (err.name !== 'AbortError') {
                     setError('Nie udało się połączyć z serwerem.');
+                    onCiphertextChange(text);
                 }
             } finally {
                 setLoading(false);
@@ -214,10 +233,10 @@ function CaesarSimulator({ onBack }) {
             clearTimeout(timer);
             controller.abort();
         };
-    }, [text, shift, mode]);
+    }, [text, shift, mode, onCiphertextChange]);
 
     const handleUseResult = () => {
-        setText(result);
+        onTextChange(result);
         setMode(mode === 'encrypt' ? 'decrypt' : 'encrypt');
     };
 
@@ -230,7 +249,7 @@ function CaesarSimulator({ onBack }) {
     };
 
     return (
-        <>
+        <div className="cipher-view-container">
             <div className="back-bar">
                 <button type="button" className="back-btn" onClick={onBack}>
                     ← Wróć do strony głównej
@@ -245,131 +264,142 @@ function CaesarSimulator({ onBack }) {
                 </p>
             </header>
 
-            <main className="card">
-                <div className="mode-switch" role="group" aria-label="Tryb">
-                    {Object.entries(MODES).map(([key, config]) => (
-                        <button
-                            key={key}
-                            type="button"
-                            className="mode-switch__option"
-                            onClick={() => {
-                                setMode(key);
-                                setError('');
-                            }}
-                            aria-pressed={mode === key}
-                        >
-                            {config.tab}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="controls">
-                    <div className="field">
-                        <label className="label" htmlFor="caesar-input-text">
-                            {modeConfig.inputLabel}
-                        </label>
-                        <textarea
-                            id="caesar-input-text"
-                            className="text-area"
-                            rows={3}
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            placeholder={modeConfig.inputPlaceholder}
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                    </div>
-
-                    <div className="field">
-                        <div className="field__header">
-                            <label className="label" htmlFor="caesar-shift">
-                                Klucz przesunięcia
-                            </label>
-                            <span className="shift-value">
-                                {modeConfig.shiftSign}{shift}
-                            </span>
-                        </div>
-                        <input
-                            id="caesar-shift"
-                            className="range"
-                            type="range"
-                            min="1"
-                            max="31"
-                            value={shift}
-                            onChange={(e) => setShift(e.target.value)}
-                        />
-                        <div className="range-scale" aria-hidden="true">
-                            <span>1</span>
-                            <span>15</span>
-                            <span>31</span>
-                        </div>
-                    </div>
-
-                    {error && (
-                        <div className="error" role="alert">
-                            ⚠️ {error}
-                        </div>
-                    )}
-                </div>
-
-                <div className="field result">
-                    <div className="field__header">
-                        <label className="label" htmlFor="caesar-result-text">
-                            {modeConfig.outputLabel}
-                        </label>
-                        {result && (
-                            <div className="result__actions">
+            <div className="cipher-content-layout">
+                <div className="cipher-content-layout__main">
+                    <main className="card">
+                        <div className="mode-switch" role="group" aria-label="Tryb">
+                            {Object.entries(MODES).map(([key, config]) => (
                                 <button
+                                    key={key}
                                     type="button"
-                                    className="link-button"
-                                    onClick={handleUseResult}
+                                    className="mode-switch__option"
+                                    onClick={() => {
+                                        setMode(key);
+                                        setError('');
+                                    }}
+                                    aria-pressed={mode === key}
                                 >
-                                    Użyj wyniku
+                                    {config.tab}
                                 </button>
-                                <button
-                                    type="button"
-                                    className="link-button"
-                                    onClick={handleCopy}
-                                >
-                                    {copied ? '✓ Skopiowano!' : 'Kopiuj'}
-                                </button>
+                            ))}
+                        </div>
+
+                        <div className="controls">
+                            <div className="field">
+                                <label className="label" htmlFor="caesar-input-text">
+                                    {modeConfig.inputLabel}
+                                </label>
+                                <textarea
+                                    id="caesar-input-text"
+                                    className="text-area"
+                                    rows={3}
+                                    value={text}
+                                    onChange={(e) => handleTextChange(e.target.value)}
+                                    placeholder={modeConfig.inputPlaceholder}
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                />
                             </div>
-                        )}
-                    </div>
-                    <textarea
-                        id="caesar-result-text"
-                        className="text-area text-area--result"
-                        rows={3}
-                        readOnly
-                        value={result}
-                        placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
-                    />
 
-                    {cipherPackage?.metadata && (
-                        <div className="metadata-bar">
-                            <span className="metadata-badge">
-                                Szyfr: <strong>{cipherPackage.metadata.cipher_type}</strong>
-                            </span>
-                            <span className="metadata-badge">
-                                Przesunięcie: <strong>{modeConfig.shiftSign}{cipherPackage.metadata.shift}</strong>
-                            </span>
-                            <span className="metadata-badge">
-                                Alfabet: <strong>{cipherPackage.metadata.alphabet_len} znaków</strong>
-                            </span>
+                            <div className="field">
+                                <div className="field__header">
+                                    <label className="label" htmlFor="caesar-shift">
+                                        Klucz przesunięcia
+                                    </label>
+                                    <span className="shift-value">
+                                        {modeConfig.shiftSign}{shift}
+                                    </span>
+                                </div>
+                                <input
+                                    id="caesar-shift"
+                                    className="range"
+                                    type="range"
+                                    min="1"
+                                    max="31"
+                                    value={shift}
+                                    onChange={(e) => setShift(e.target.value)}
+                                />
+                                <div className="range-scale" aria-hidden="true">
+                                    <span>1</span>
+                                    <span>15</span>
+                                    <span>31</span>
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="error" role="alert">
+                                    {error}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            </main>
 
-            <StepsVisualization cipherPackage={cipherPackage} />
-        </>
+                        <div className="field result">
+                            <div className="field__header">
+                                <label className="label" htmlFor="caesar-result-text">
+                                    {modeConfig.outputLabel}
+                                </label>
+                                {result && (
+                                    <div className="result__actions">
+                                        <button
+                                            type="button"
+                                            className="link-button"
+                                            onClick={handleUseResult}
+                                        >
+                                            Użyj wyniku
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="link-button"
+                                            onClick={handleCopy}
+                                        >
+                                            {copied ? 'Skopiowano!' : 'Kopiuj'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                            <textarea
+                                id="caesar-result-text"
+                                className="text-area text-area--result"
+                                rows={3}
+                                readOnly
+                                value={result}
+                                placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
+                            />
+
+                            {cipherPackage?.metadata && (
+                                <div className="metadata-bar">
+                                    <span className="metadata-badge">
+                                        Szyfr: <strong>{cipherPackage.metadata.cipher_type}</strong>
+                                    </span>
+                                    <span className="metadata-badge">
+                                        Przesunięcie: <strong>{modeConfig.shiftSign}{cipherPackage.metadata.shift}</strong>
+                                    </span>
+                                    <span className="metadata-badge">
+                                        Alfabet: <strong>{cipherPackage.metadata.alphabet_len} znaków</strong>
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* Graficzna reprezentacja przesuwania alfabetu klocków */}
+                    <CaesarShiftVisualizer shift={shift} mode={mode} />
+
+                    <StepsVisualization cipherPackage={cipherPackage} />
+                </div>
+
+                {/* Boczny panel / Accordion z historią i kryptoanalizą */}
+                <div className="cipher-content-layout__sidebar">
+                    <CipherHistoryInfo cipherType="caesar" />
+                </div>
+            </div>
+        </div>
     );
 }
 
 // Moduł 2: Szyfr Vigenère'a na żywo
-function VigenereSimulator({ onBack }) {
+function VigenereSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
     const [mode, setMode] = useState('encrypt');
-    const [text, setText] = useState('');
     const [keyword, setKeyword] = useState('KLUCZ');
     const [result, setResult] = useState('');
     const [cipherPackage, setCipherPackage] = useState(null);
@@ -378,6 +408,15 @@ function VigenereSimulator({ onBack }) {
     const [copied, setCopied] = useState(false);
 
     const modeConfig = MODES[mode];
+
+    const handleTextChange = (newText) => {
+        onTextChange(newText);
+        if (!newText.trim()) {
+            onCiphertextChange('');
+        } else if (mode === 'decrypt') {
+            onCiphertextChange(newText);
+        }
+    };
 
     useEffect(() => {
         if (!text.trim() || !keyword.trim()) {
@@ -422,12 +461,13 @@ function VigenereSimulator({ onBack }) {
                 }
 
                 const data = await response.json();
-                // Wykorzystanie paczki danych z kontraktu API Vigenère
                 setResult(data.final_text);
                 setCipherPackage(data);
+                onCiphertextChange(mode === 'encrypt' ? data.final_text : text);
             } catch (err) {
                 if (err.name !== 'AbortError') {
                     setError('Nie udało się połączyć z serwerem.');
+                    onCiphertextChange(text);
                 }
             } finally {
                 setLoading(false);
@@ -438,10 +478,10 @@ function VigenereSimulator({ onBack }) {
             clearTimeout(timer);
             controller.abort();
         };
-    }, [text, keyword, mode]);
+    }, [text, keyword, mode, onCiphertextChange]);
 
     const handleUseResult = () => {
-        setText(result);
+        onTextChange(result);
         setMode(mode === 'encrypt' ? 'decrypt' : 'encrypt');
     };
 
@@ -454,7 +494,7 @@ function VigenereSimulator({ onBack }) {
     };
 
     return (
-        <>
+        <div className="cipher-view-container">
             <div className="back-bar">
                 <button type="button" className="back-btn" onClick={onBack}>
                     ← Wróć do strony głównej
@@ -469,132 +509,144 @@ function VigenereSimulator({ onBack }) {
                 </p>
             </header>
 
-            <main className="card">
-                <div className="mode-switch" role="group" aria-label="Tryb">
-                    {Object.entries(MODES).map(([key, config]) => (
-                        <button
-                            key={key}
-                            type="button"
-                            className="mode-switch__option"
-                            onClick={() => {
-                                setMode(key);
-                                setError('');
-                            }}
-                            aria-pressed={mode === key}
-                        >
-                            {config.tab}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="controls">
-                    <div className="field">
-                        <label className="label" htmlFor="vigenere-input-text">
-                            {modeConfig.inputLabel}
-                        </label>
-                        <textarea
-                            id="vigenere-input-text"
-                            className="text-area"
-                            rows={3}
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            placeholder={modeConfig.inputPlaceholder}
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                    </div>
-
-                    <div className="field">
-                        <div className="field__header">
-                            <label className="label" htmlFor="vigenere-keyword">
-                                Słowo kluczowe (Keyword)
-                            </label>
-                            <span className="shift-value">
-                                {keyword ? keyword.toUpperCase() : 'Brak'}
-                            </span>
-                        </div>
-                        <input
-                            id="vigenere-keyword"
-                            type="text"
-                            className="text-input"
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                            placeholder="Wpisz słowo kluczowe (np. KLUCZ)..."
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                        <span className="field-hint">
-                            Litery klucza określają cykliczne przesunięcia kolejnych znaków w polskim alfabecie.
-                        </span>
-                    </div>
-
-                    {error && (
-                        <div className="error" role="alert">
-                            ⚠️ {error}
-                        </div>
-                    )}
-                </div>
-
-                <div className="field result">
-                    <div className="field__header">
-                        <label className="label" htmlFor="vigenere-result-text">
-                            {modeConfig.outputLabel}
-                        </label>
-                        {result && (
-                            <div className="result__actions">
+            <div className="cipher-content-layout">
+                <div className="cipher-content-layout__main">
+                    <main className="card">
+                        <div className="mode-switch" role="group" aria-label="Tryb">
+                            {Object.entries(MODES).map(([key, config]) => (
                                 <button
+                                    key={key}
                                     type="button"
-                                    className="link-button"
-                                    onClick={handleUseResult}
+                                    className="mode-switch__option"
+                                    onClick={() => {
+                                        setMode(key);
+                                        setError('');
+                                    }}
+                                    aria-pressed={mode === key}
                                 >
-                                    Użyj wyniku
+                                    {config.tab}
                                 </button>
-                                <button
-                                    type="button"
-                                    className="link-button"
-                                    onClick={handleCopy}
-                                >
-                                    {copied ? '✓ Skopiowano!' : 'Kopiuj'}
-                                </button>
+                            ))}
+                        </div>
+
+                        <div className="controls">
+                            <div className="field">
+                                <label className="label" htmlFor="vigenere-input-text">
+                                    {modeConfig.inputLabel}
+                                </label>
+                                <textarea
+                                    id="vigenere-input-text"
+                                    className="text-area"
+                                    rows={3}
+                                    value={text}
+                                    onChange={(e) => handleTextChange(e.target.value)}
+                                    placeholder={modeConfig.inputPlaceholder}
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                />
                             </div>
-                        )}
-                    </div>
-                    <textarea
-                        id="vigenere-result-text"
-                        className="text-area text-area--result"
-                        rows={3}
-                        readOnly
-                        value={result}
-                        placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
-                    />
 
-                    {cipherPackage?.metadata && (
-                        <div className="metadata-bar">
-                            <span className="metadata-badge">
-                                Szyfr: <strong>Vigenère</strong>
-                            </span>
-                            <span className="metadata-badge">
-                                Klucz: <strong>{cipherPackage.metadata.keyword}</strong>
-                            </span>
-                            <span className="metadata-badge">
-                                Długość klucza: <strong>{cipherPackage.metadata.keyword.length}</strong>
-                            </span>
-                            <span className="metadata-badge">
-                                Tryb: <strong>{cipherPackage.metadata.mode === 'encrypt' ? 'Szyfrowanie' : 'Deszyfrowanie'}</strong>
-                            </span>
+                            <div className="field">
+                                <div className="field__header">
+                                    <label className="label" htmlFor="vigenere-keyword">
+                                        Słowo kluczowe (Keyword)
+                                    </label>
+                                    <span className="shift-value">
+                                        {keyword ? keyword.toUpperCase() : 'Brak'}
+                                    </span>
+                                </div>
+                                <input
+                                    id="vigenere-keyword"
+                                    type="text"
+                                    className="text-input"
+                                    value={keyword}
+                                    onChange={(e) => setKeyword(e.target.value)}
+                                    placeholder="Wpisz słowo kluczowe (np. KLUCZ)..."
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                />
+                                <span className="field-hint">
+                                    Litery klucza określają cykliczne przesunięcia kolejnych znaków w polskim alfabecie.
+                                </span>
+                            </div>
+
+                            {error && (
+                                <div className="error" role="alert">
+                                    {error}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            </main>
 
-            <StepsVisualization cipherPackage={cipherPackage} />
-        </>
+                        <div className="field result">
+                            <div className="field__header">
+                                <label className="label" htmlFor="vigenere-result-text">
+                                    {modeConfig.outputLabel}
+                                </label>
+                                {result && (
+                                    <div className="result__actions">
+                                        <button
+                                            type="button"
+                                            className="link-button"
+                                            onClick={handleUseResult}
+                                        >
+                                            Użyj wyniku
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="link-button"
+                                            onClick={handleCopy}
+                                        >
+                                            {copied ? 'Skopiowano!' : 'Kopiuj'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                            <textarea
+                                id="vigenere-result-text"
+                                className="text-area text-area--result"
+                                rows={3}
+                                readOnly
+                                value={result}
+                                placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
+                            />
+
+                            {cipherPackage?.metadata && (
+                                <div className="metadata-bar">
+                                    <span className="metadata-badge">
+                                        Szyfr: <strong>Vigenère</strong>
+                                    </span>
+                                    <span className="metadata-badge">
+                                        Klucz: <strong>{cipherPackage.metadata.keyword}</strong>
+                                    </span>
+                                    <span className="metadata-badge">
+                                        Długość klucza: <strong>{cipherPackage.metadata.keyword.length}</strong>
+                                    </span>
+                                    <span className="metadata-badge">
+                                        Tryb: <strong>{cipherPackage.metadata.mode === 'encrypt' ? 'Szyfrowanie' : 'Deszyfrowanie'}</strong>
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    <StepsVisualization cipherPackage={cipherPackage} />
+                </div>
+
+                {/* Boczny panel / Accordion z historią i kryptoanalizą */}
+                <div className="cipher-content-layout__sidebar">
+                    <CipherHistoryInfo cipherType="vigenere" />
+                </div>
+            </div>
+        </div>
     );
 }
 
 // Główny komponent aplikacji
 export default function App() {
     const [currentView, setCurrentView] = useState('home');
+    const [caesarText, setCaesarText] = useState('');
+    const [vigenereText, setVigenereText] = useState('');
+    const [sharedCiphertext, setSharedCiphertext] = useState('');
 
     return (
         <div className="app">
@@ -630,6 +682,13 @@ export default function App() {
                         onClick={() => setCurrentView('vigenere')}
                     >
                         Szyfr Vigenère’a
+                    </button>
+                    <button
+                        type="button"
+                        className={`nav-link-btn ${currentView === 'cryptanalysis' ? 'active' : ''}`}
+                        onClick={() => setCurrentView('cryptanalysis')}
+                    >
+                        Kryptoanaliza / Łamanie Szyfrów
                     </button>
                 </div>
             </nav>
@@ -669,7 +728,7 @@ export default function App() {
                                 <h3 className="cipher-name">{cipher.name}</h3>
                                 <p className="cipher-desc">{cipher.description}</p>
                                 <div className="cipher-action">
-                                    {cipher.available ? 'Uruchom symulator na żywo →' : 'Niedostępne'}
+                                    {cipher.available ? 'Uruchom moduł na żywo →' : 'Niedostępne'}
                                 </div>
                             </div>
                         ))}
@@ -679,12 +738,30 @@ export default function App() {
 
             {/* Widok: Symulator Cezara */}
             {currentView === 'caesar' && (
-                <CaesarSimulator onBack={() => setCurrentView('home')} />
+                <CaesarSimulator
+                    onBack={() => setCurrentView('home')}
+                    text={caesarText}
+                    onTextChange={setCaesarText}
+                    onCiphertextChange={setSharedCiphertext}
+                />
             )}
 
             {/* Widok: Symulator Vigenère'a */}
             {currentView === 'vigenere' && (
-                <VigenereSimulator onBack={() => setCurrentView('home')} />
+                <VigenereSimulator
+                    onBack={() => setCurrentView('home')}
+                    text={vigenereText}
+                    onTextChange={setVigenereText}
+                    onCiphertextChange={setSharedCiphertext}
+                />
+            )}
+
+            {/* Widok: Kryptoanaliza / Łamanie Szyfrów */}
+            {currentView === 'cryptanalysis' && (
+                <CryptanalysisView
+                    onBack={() => setCurrentView('home')}
+                    initialCiphertext={sharedCiphertext}
+                />
             )}
 
             <footer className="footer">
