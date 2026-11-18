@@ -137,7 +137,7 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
                 onClick={() => setIsModalOpen(true)}
                 style={{ marginTop: '0.5rem', width: 'auto', minWidth: '200px' }}
             >
-                📖 Tło historyczne
+                Tło historyczne
             </button>
 
             {isModalOpen && (
@@ -173,7 +173,7 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
                             onMouseEnter={e => e.target.style.color = '#fff'}
                             onMouseLeave={e => e.target.style.color = '#94a3b8'}
                         >
-                            ✖
+                            ✕
                         </button>
                         
                         <aside className="cipher-history-panel" aria-label="Informacje historyczne i kryptoanalityczne" style={{boxShadow: 'none', border: 'none', padding: 0}}>

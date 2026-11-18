@@ -83,15 +83,24 @@ function computeLocalCaesarBruteForce(text) {
     };
 }
 
-export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
+export default function CryptanalysisView({
+    onBack,
+    initialCiphertext = '',
+    onOpenNotes,
+}) {
     const [cipherText, setCipherText] = useState(initialCiphertext);
     const [analysisData, setAnalysisData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [bruteForceData, setBruteForceData] = useState(null);
     const [bruteForceLoading, setBruteForceLoading] = useState(false);
     const [error, setError] = useState('');
+    const [shiftDelta, setShiftDelta] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+
     const canvasRef = useRef(null);
     const chartInstanceRef = useRef(null);
+    const dragStartXRef = useRef(0);
+    const dragStartDeltaRef = useRef(0);
 
     const handleAnalyze = async () => {
         if (!cipherText.trim()) {
@@ -102,6 +111,7 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
 
         setLoading(true);
         setError('');
+        setShiftDelta(0);
 
         try {
             const response = await fetch('/api/v1/cryptanalysis/frequency', {
@@ -178,8 +188,12 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
         runBruteForce();
     };
 
+    // Synchronizacja z zewnętrznie przekazanym szyfrogramem (np. z symulatora lub notatek)
     useEffect(() => {
+        setCipherText(initialCiphertext);
+        setShiftDelta(0);
         if (!initialCiphertext.trim()) return;
+
         let isMounted = true;
         fetch('/api/v1/cryptanalysis/frequency', {
             method: 'POST',
@@ -202,6 +216,53 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
         return () => { isMounted = false; };
     }, [initialCiphertext]);
 
+    // Obsługa przeciągania myszą w osi X
+    const handleMouseDown = (e) => {
+        setIsDragging(true);
+        dragStartXRef.current = e.clientX;
+        dragStartDeltaRef.current = shiftDelta;
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        const diffX = e.clientX - dragStartXRef.current;
+        const pxPerLetter = 22;
+        const deltaChange = Math.trunc(diffX / pxPerLetter);
+        setShiftDelta(dragStartDeltaRef.current + deltaChange);
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    // Obsługa przeciągania dotykowego na ekranach dotykowych
+    const handleTouchStart = (e) => {
+        if (e.touches && e.touches.length === 1) {
+            setIsDragging(true);
+            dragStartXRef.current = e.touches[0].clientX;
+            dragStartDeltaRef.current = shiftDelta;
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (!isDragging || !e.touches || e.touches.length !== 1) return;
+        const diffX = e.touches[0].clientX - dragStartXRef.current;
+        const pxPerLetter = 22;
+        const deltaChange = Math.trunc(diffX / pxPerLetter);
+        setShiftDelta(dragStartDeltaRef.current + deltaChange);
+    };
+
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+    };
+
+    const shiftDeltaRef = useRef(shiftDelta);
+
+    useEffect(() => {
+        shiftDeltaRef.current = shiftDelta;
+    }, [shiftDelta]);
+
+    // Tworzenie lub niszczenie instancji Chart.js
     useEffect(() => {
         if (!analysisData || !canvasRef.current) return;
 
@@ -211,8 +272,15 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
         }
 
         const labels = analysisData.frequencies.map((f) => f.letter);
-        const cipherFrequencies = analysisData.frequencies.map((f) => f.frequency);
         const naturalFrequencies = analysisData.frequencies.map((f) => f.natural_frequency);
+
+        const len = POLISH_ALPHABET.length;
+        const currentShift = shiftDeltaRef.current;
+        const normDelta = ((currentShift % len) + len) % len;
+        const shiftedCipherFrequencies = analysisData.frequencies.map((_, i) => {
+            const origIdx = (i - normDelta + len) % len;
+            return analysisData.frequencies[origIdx].frequency;
+        });
 
         const ctx = canvasRef.current.getContext('2d');
         chartInstanceRef.current = new Chart(ctx, {
@@ -222,7 +290,7 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
                 datasets: [
                     {
                         label: 'Szyfrogram (%)',
-                        data: cipherFrequencies,
+                        data: shiftedCipherFrequencies,
                         backgroundColor: 'rgba(99, 102, 241, 0.85)',
                         borderColor: '#818cf8',
                         borderWidth: 1.5,
@@ -250,19 +318,32 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
                         labels: {
                             color: '#f8fafc',
                             font: { size: 13, weight: '600', family: 'Inter, system-ui, sans-serif' },
-                            usePointStyle: true, pointStyle: 'rectRounded', padding: 16,
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded',
+                            padding: 16,
                         },
                     },
                     tooltip: {
-                        backgroundColor: '#1e293b', titleColor: '#f8fafc',
-                        bodyColor: '#cbd5e1', borderColor: '#334155',
-                        borderWidth: 1, padding: 12,
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        padding: 12,
                         callbacks: {
                             label: function (context) {
                                 const datasetLabel = context.dataset.label || '';
                                 const value = context.parsed.y;
                                 if (context.datasetIndex === 0) {
-                                    const count = analysisData.frequencies[context.dataIndex]?.count || 0;
+                                    const alphabetLen = POLISH_ALPHABET.length;
+                                    const activeShift = shiftDeltaRef.current;
+                                    const currentNormDelta = ((activeShift % alphabetLen) + alphabetLen) % alphabetLen;
+                                    const origIndex = (context.dataIndex - currentNormDelta + alphabetLen) % alphabetLen;
+                                    const origLetter = POLISH_ALPHABET[origIndex];
+                                    const count = analysisData.frequencies[origIndex]?.count || 0;
+                                    if (activeShift !== 0) {
+                                        return `${datasetLabel}: ${value}% (${count} wystąpień litery ${origLetter}, przesunięcie Δ = ${activeShift > 0 ? '+' : ''}${activeShift})`;
+                                    }
                                     return `${datasetLabel}: ${value}% (${count} wystąpień)`;
                                 }
                                 return `${datasetLabel}: ${value}%`;
@@ -292,6 +373,20 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
             }
         };
     }, [analysisData]);
+
+    // Płynna aktualizacja danych wykresu po zmianie przesunięcia (shiftDelta) bez przeładowywania canvas
+    useEffect(() => {
+        if (!chartInstanceRef.current || !analysisData) return;
+        const len = POLISH_ALPHABET.length;
+        const normDelta = ((shiftDelta % len) + len) % len;
+        const shiftedCipherFrequencies = analysisData.frequencies.map((_, i) => {
+            const origIdx = (i - normDelta + len) % len;
+            return analysisData.frequencies[origIdx].frequency;
+        });
+
+        chartInstanceRef.current.data.datasets[0].data = shiftedCipherFrequencies;
+        chartInstanceRef.current.update('none');
+    }, [shiftDelta, analysisData]);
 
     return (
         <div className="cryptanalysis-page">
@@ -349,6 +444,16 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
                     >
                         {bruteForceLoading ? 'Łamanie szyfru...' : 'Złam (Cezar - Brute Force)'}
                     </button>
+                    {onOpenNotes && (
+                        <button
+                            type="button"
+                            className="secondary-button notes-nav-shortcut-btn"
+                            onClick={onOpenNotes}
+                            title="Otwórz panel zarządzania notatkami i zapisanymi szyfrogramami"
+                        >
+                            Zarządzanie notatkami / wykresami →
+                        </button>
+                    )}
                     <span className="analysis-hint">
                         Analiza statystyk lub test wszystkich możliwych przesunięć przez API.
                     </span>
@@ -371,7 +476,6 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
                                     Przejrzyj tabelę poniżej i oceń, dla którego klucza odszyfrowany tekst ma sens w języku naturalnym.
                                 </p>
                             </div>
-                            {/* Usunięto przełączniki A-Z / PL */}
                         </div>
 
                         <div className="brute-force-table-wrapper">
@@ -411,12 +515,72 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
 
                         <div className="chart-wrapper">
                             <div className="chart-header">
-                                <h3 className="chart-title">Wykres Częstotliwości Liter vs Język Naturalny</h3>
-                                <span className="chart-legend-badge">
-                                    Fiolet = Szyfrogram | Szary = Polski Język Naturalny
-                                </span>
+                                <div>
+                                    <h3 className="chart-title">Wykres Częstotliwości Liter vs Język Naturalny</h3>
+                                    <span className="chart-legend-badge">
+                                        Fiolet = Szyfrogram | Szary = Polski Język Naturalny
+                                    </span>
+                                </div>
                             </div>
-                            <div className="chart-canvas-container">
+
+                            {/* Pasek kontroli przesuwania wykresu i wskaźnik Delta */}
+                            <div className="chart-shift-bar">
+                                <div className="shift-badge-box">
+                                    <span className="shift-badge-label">Przesunięcie wykresu:</span>
+                                    <span className={`delta-badge ${shiftDelta !== 0 ? 'delta-badge--active' : ''}`}>
+                                        Δ = {shiftDelta > 0 ? `+${shiftDelta}` : shiftDelta}
+                                    </span>
+                                    <span className="shift-units-text">
+                                        ({Math.abs(shiftDelta)} {Math.abs(shiftDelta) === 1 ? 'pozycja' : 'pozycji'}
+                                        {shiftDelta === 0 ? '' : shiftDelta > 0 ? ' w prawo' : ' w lewo'})
+                                    </span>
+                                </div>
+
+                                <div className="shift-actions">
+                                    <button
+                                        type="button"
+                                        className="shift-btn"
+                                        onClick={() => setShiftDelta((d) => d - 1)}
+                                        title="Przesuń wykres o 1 pozycję w lewo"
+                                    >
+                                        ← W lewo (-1)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="shift-btn"
+                                        onClick={() => setShiftDelta((d) => d + 1)}
+                                        title="Przesuń wykres o 1 pozycję w prawo"
+                                    >
+                                        W prawo (+1) →
+                                    </button>
+                                    {shiftDelta !== 0 && (
+                                        <button
+                                            type="button"
+                                            className="shift-reset-btn"
+                                            onClick={() => setShiftDelta(0)}
+                                            title="Powrót do pierwotnej pozycji (Delta = 0)"
+                                        >
+                                            Zresetuj (Δ = 0)
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <p className="chart-drag-tip">
+                                Przeciągaj wykres myszą w poziomie (oś X) lub użyj przycisków, aby nałożyć na siebie słupki i porównać je „na oko”.
+                            </p>
+
+                            <div
+                                className={`chart-canvas-container ${isDragging ? 'chart-canvas-container--dragging' : ''}`}
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseUp}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                title="Kliknij i przeciągnij w poziomie, aby przesunąć wykres częstotliwości"
+                            >
                                 <canvas ref={canvasRef} aria-label="Wykres słupkowy częstotliwości liter" />
                             </div>
                         </div>
@@ -427,13 +591,13 @@ export default function CryptanalysisView({ onBack, initialCiphertext = '' }) {
                                 <div className="edu-guide-col">
                                     <h5>Szyfr Cezara (monoalfabetyczny)</h5>
                                     <p>
-                                        Słupek naturalny i słupek szyfrogramu mają podobny kształt (wyraźne maksima dla samogłosek), ale cały profil jest <strong>przesunięty w bok</strong> o wartość stałego klucza. Wystarczy policzyć odległość najwyższego fioletowego słupka od naturalnego <strong>A</strong>, by odgadnąć klucz!
+                                        Słupek naturalny i słupek szyfrogramu mają podobny kształt (wyraźne maksima dla samogłosek), ale cały profil jest <strong>przesunięty w bok</strong> o wartość stałego klucza. Przesuń wykres w osi X tak, aby dopasować fioletowe piki do szarych słupków języka polskiego – wartość wskaźnika Delta ujawni klucz!
                                     </p>
                                 </div>
                                 <div className="edu-guide-col">
                                     <h5>Szyfr Vigenère’a (polialfabetyczny)</h5>
                                     <p>
-                                        Wielokrotne stosowanie różnych przesunięć powoduje tzw. <em>spłaszczenie rozkładu</em>. Fioletowe słupki mają zbliżone wysokości i nie pokrywają się z charakterystycznym profilem języka polskiego. Im dłuższy klucz, tym bardziej wykres przypomina losowy szum.
+                                        Wielokrotne stosowanie różnych przesunięć powoduje tzw. <em>spłaszczenie rozkładu</em>. Fioletowe słupki mają zbliżone wysokości i nie pokrywają się z charakterystycznym profilem języka polskiego, a przesuwanie wykresu nie przynosi wyraźnego dopasowania maksimów.
                                     </p>
                                 </div>
                             </div>

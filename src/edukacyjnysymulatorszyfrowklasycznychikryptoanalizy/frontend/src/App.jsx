@@ -3,6 +3,42 @@ import './App.css';
 import CaesarShiftVisualizer from './components/CaesarShiftVisualizer';
 import CipherHistoryInfo from './components/CipherHistoryInfo';
 import CryptanalysisView from './components/CryptanalysisView';
+import NotesManagementPanel from './components/NotesManagementPanel';
+
+const INITIAL_NOTES = [
+    {
+        id: 'note-1',
+        title: 'Przechwycona depesza polowa (Szyfr Cezara)',
+        cipherType: 'Szyfr Cezara',
+        content: 'Śekóćę ź yh ńsfą łgbc nzd rwo umtaźp ilj! Mtźśyrcócnlac falcńc wźlgyólg.',
+        notes: 'Przechwycony meldunek polowy. Wyraźne maksima samogłosek przesunięte względem języka naturalnego, wskazujące na szyfr monoalfabetyczny.',
+        createdAt: '2026-11-18 14:30',
+    },
+    {
+        id: 'note-2',
+        title: 'Tajna wiadomość dyplomatyczna (Szyfr Vigenère’a)',
+        cipherType: 'Szyfr Vigenère’a',
+        content: 'Wtoźm Auzathźk omtl oź godogp tlę abcąplc śya efó ęmacłl zglśń ogl ehfmm ćtą fmfta mra ndh óećuefy.',
+        notes: 'Szyfrogram wieloalfabetyczny ze spłaszczonym rozkładem częstotliwości liter i niskim indeksem koincydencji (~0.038).',
+        createdAt: '2026-11-18 15:15',
+    },
+    {
+        id: 'note-3',
+        title: 'Tekst referencyjny języka polskiego (Pan Tadeusz)',
+        cipherType: 'Tekst jawny',
+        content: 'Litwo Ojczyzno moja ty jesteś jak zdrowie ile cię trzeba cenić ten tylko się dowie kto cię stracił dziś piękność twą w całej ozdobie widzę i opisuję bo tęsknię po tobie',
+        notes: 'Wzorzec naturalnego języka polskiego – dominuje litera A (~8.9%), I (~8.2%), O (~7.7%) i E (~7.6%).',
+        createdAt: '2026-11-18 15:40',
+    },
+    {
+        id: 'note-4',
+        title: 'Klasyczna depesza Cezara (A-Z, przesunięcie 3)',
+        cipherType: 'Szyfr Cezara',
+        content: 'Khoor zruog! Fubswrjudskb lv ixq dqg hdvb wr euhdn eb euxwh irufh.',
+        notes: 'Alfabet łaciński 26 liter, klucz shift = 3.',
+        createdAt: '2026-11-18 16:00',
+    },
+];
 
 const CIPHER_MODULES = [
     {
@@ -28,11 +64,20 @@ const CIPHER_MODULES = [
         name: 'Kryptoanaliza / Łamanie Szyfrów',
         category: 'Kryptoanaliza & Statystyka',
         badge: 'Wykresy & Analiza',
-        description: 'Wizualizacja statystyk liter w szyfrogramie, wykresy słupkowe z tłem języka polskiego i badanie Indeksu Koincydencji.',
+        description: 'Wizualizacja statystyk liter w szyfrogramie, interaktywne przesuwanie wykresu, tło języka polskiego i atak Brute Force.',
         icon: '',
         available: true,
     },
-{
+    {
+        id: 'notes',
+        name: 'Zarządzanie Notatkami i Wykresami',
+        category: 'Narzędzia Analityczne',
+        badge: 'Notatnik Badacza',
+        description: 'Panel zarządzania zapisanymi notatkami, próbkami szyfrogramów i wykresami. Wybierz notatkę i przenieś do analizy.',
+        icon: '',
+        available: true,
+    },
+    {
         id: 'playfair',
         name: 'Szyfr Playfair',
         category: 'Kryptografia Klasyczna',
@@ -101,49 +146,52 @@ function StepsVisualization({ cipherPackage }) {
                         >
                             <div className="step-card__header">
                                 <span className="step-card__index">#{step.index + 1}</span>
-                                <div className="step-card__chars">
-                                    <span className="char-badge input-char" title="Znak wejściowy">
+                                <span className={`step-card__status ${isMod ? 'step-card__status--mod' : ''}`}>
+                                    {isMod ? 'Zmieniono' : 'Pominięto'}
+                                </span>
+                            </div>
+
+                            <div className="step-card__chars">
+                                <div className="char-box">
+                                    <span className="char-box__label">Wejście</span>
+                                    <span className="char-box__val">
                                         {step.input_char === ' ' ? '␣' : step.input_char}
                                     </span>
-                                    <span className="step-card__arrow">→</span>
-                                    <span className="char-badge output-char" title="Znak wyjściowy">
+                                </div>
+                                <span className="step-card__arrow">→</span>
+                                <div className="char-box">
+                                    <span className="char-box__label">Wyjście</span>
+                                    <span className="char-box__val">
                                         {step.output_char === ' ' ? '␣' : step.output_char}
                                     </span>
                                 </div>
-                                <span
-                                    className={`status-pill ${
-                                        isMod ? 'status-pill--modified' : 'status-pill--unmodified'
-                                    }`}
-                                >
-                                    {isMod ? 'Przesunięty' : 'Niezmieniony'}
-                                </span>
                             </div>
 
                             <div className="step-card__details">
                                 {isMod ? (
                                     <>
-                                        <div className="step-formula-row">
-                                            {step.operation_details.key_char && (
-                                                <span className="key-char-badge" title="Litera klucza">
-                                                    Klucz: {step.operation_details.key_char}
-                                                </span>
-                                            )}
-                                            <div className="step-formula">
-                                                <span className="formula-label">Wzór:</span>
-                                                <code>{step.operation_details.formula}</code>
-                                            </div>
+                                        <div className="detail-row">
+                                            <span>Pozycja w alfabecie:</span>
+                                            <strong>
+                                                {step.operation_details.original_pos} → {step.operation_details.new_pos}
+                                            </strong>
                                         </div>
-                                        <div className="step-info">
-                                            Indeks w alfabecie: {step.operation_details.original_index} → {step.operation_details.new_index}
-                                            {step.operation_details.shift_applied !== undefined && ` (przesunięcie: ${step.operation_details.shift_applied})`}
+                                        <div className="detail-row">
+                                            <span>Wielkość:</span>
+                                            <span>
+                                                {step.operation_details.case === 'upper' ? 'Wielka' : 'Mała'}
+                                            </span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span>Przesunięcie:</span>
+                                            <span>{step.operation_details.shift_applied}</span>
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="step-reason">
-                                        Powód: <em>{step.operation_details.reason}</em>
-                                    </div>
+                                    <p className="unmodified-reason">
+                                        Znak spoza polskiego alfabetu – przepisany bez zmian.
+                                    </p>
                                 )}
-                                <p className="step-desc">{step.description}</p>
                             </div>
                         </div>
                     );
@@ -153,13 +201,20 @@ function StepsVisualization({ cipherPackage }) {
     );
 }
 
-function CaesarSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
+function CaesarSimulator({
+    onBack,
+    text,
+    onTextChange,
+    onCiphertextChange,
+    onTransferToAnalysis,
+    onSaveToNotes,
+}) {
     const [mode, setMode] = useState('encrypt');
     const [shift, setShift] = useState(3);
     const [result, setResult] = useState('');
     const [cipherPackage, setCipherPackage] = useState(null);
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const modeConfig = MODES[mode];
@@ -262,7 +317,6 @@ function CaesarSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
                 <p className="subtitle">
                     Wpisz tekst i ustaw przesunięcie, aby natychmiast zobaczyć wynik i matematyczną analizę krok po kroku.
                 </p>
-                {/* TUTAJ DODAJEMY PRZYCISK MODALA: */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
                     <CipherHistoryInfo cipherType="caesar" />
                 </div>
@@ -357,6 +411,33 @@ function CaesarSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
                                         >
                                             {copied ? 'Skopiowano!' : 'Kopiuj'}
                                         </button>
+                                        {onTransferToAnalysis && (
+                                            <button
+                                                type="button"
+                                                className="link-button link-button--accent"
+                                                onClick={() => onTransferToAnalysis(result)}
+                                                title="Przenieś ten wynik bezpośrednio do modułu kryptoanalizy"
+                                            >
+                                                Przenieś do analizy →
+                                            </button>
+                                        )}
+                                        {onSaveToNotes && (
+                                            <button
+                                                type="button"
+                                                className="link-button"
+                                                onClick={() =>
+                                                    onSaveToNotes({
+                                                        title: `Szyfr Cezara (${modeConfig.tab}, klucz ${modeConfig.shiftSign}${shift})`,
+                                                        cipherType: 'Szyfr Cezara',
+                                                        content: result,
+                                                        notes: `Zapisano z symulatora Cezara. Wejście: "${text.slice(0, 45)}${text.length > 45 ? '...' : ''}", klucz: ${shift}.`,
+                                                    })
+                                                }
+                                                title="Zapisz ten wynik w panelu notatek"
+                                            >
+                                                Zapisz w notatkach
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -396,13 +477,20 @@ function CaesarSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
 }
 
 // Moduł 2: Szyfr Vigenère'a na żywo
-function VigenereSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
+function VigenereSimulator({
+    onBack,
+    text,
+    onTextChange,
+    onCiphertextChange,
+    onTransferToAnalysis,
+    onSaveToNotes,
+}) {
     const [mode, setMode] = useState('encrypt');
     const [keyword, setKeyword] = useState('KLUCZ');
     const [result, setResult] = useState('');
     const [cipherPackage, setCipherPackage] = useState(null);
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const modeConfig = MODES[mode];
@@ -505,7 +593,6 @@ function VigenereSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
                 <p className="subtitle">
                     Wpisz wiadomość i słowo kluczowe, aby obserwować działanie szyfru polialfabetycznego.
                 </p>
-                {/* TUTAJ DODAJEMY PRZYCISK MODALA: */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
                     <CipherHistoryInfo cipherType="vigenere" />
                 </div>
@@ -600,6 +687,33 @@ function VigenereSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
                                         >
                                             {copied ? 'Skopiowano!' : 'Kopiuj'}
                                         </button>
+                                        {onTransferToAnalysis && (
+                                            <button
+                                                type="button"
+                                                className="link-button link-button--accent"
+                                                onClick={() => onTransferToAnalysis(result)}
+                                                title="Przenieś ten wynik bezpośrednio do modułu kryptoanalizy"
+                                            >
+                                                Przenieś do analizy →
+                                            </button>
+                                        )}
+                                        {onSaveToNotes && (
+                                            <button
+                                                type="button"
+                                                className="link-button"
+                                                onClick={() =>
+                                                    onSaveToNotes({
+                                                        title: `Szyfr Vigenère’a (${modeConfig.tab}, klucz ${keyword})`,
+                                                        cipherType: 'Szyfr Vigenère’a',
+                                                        content: result,
+                                                        notes: `Zapisano z symulatora Vigenère'a. Wejście: "${text.slice(0, 45)}${text.length > 45 ? '...' : ''}", słowo kluczowe: ${keyword}.`,
+                                                    })
+                                                }
+                                                title="Zapisz ten wynik w panelu notatek"
+                                            >
+                                                Zapisz w notatkach
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -633,8 +747,6 @@ function VigenereSimulator({ onBack, text, onTextChange, onCiphertextChange }) {
 
                     <StepsVisualization cipherPackage={cipherPackage} />
                 </div>
-
-            
             </div>
         </div>
     );
@@ -646,9 +758,49 @@ export default function App() {
     const [caesarText, setCaesarText] = useState('');
     const [vigenereText, setVigenereText] = useState('');
     const [sharedCiphertext, setSharedCiphertext] = useState('');
+    const [notes, setNotes] = useState(INITIAL_NOTES);
+    const [toastMessage, setToastMessage] = useState('');
+
+    const showToast = (msg) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(''), 3000);
+    };
+
+    const handleAddNote = (newNote) => {
+        setNotes((prev) => [newNote, ...prev]);
+        showToast(`Dodano notatkę: "${newNote.title}"`);
+    };
+
+    const handleDeleteNote = (noteId) => {
+        setNotes((prev) => prev.filter((n) => n.id !== noteId));
+        showToast('Usunięto notatkę.');
+    };
+
+    const handleTransferToAnalysis = (content) => {
+        setSharedCiphertext(content);
+        setCurrentView('cryptanalysis');
+        showToast('Przeniesiono dane do modułu kryptoanalizy.');
+    };
+
+    const handleSaveToNotesFromSimulator = (noteData) => {
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 16).replace('T', ' ');
+        const newNote = {
+            id: `note-${Date.now()}`,
+            createdAt: dateStr,
+            ...noteData,
+        };
+        handleAddNote(newNote);
+    };
 
     return (
         <div className="app">
+            {toastMessage && (
+                <div className="global-toast" role="status">
+                    {toastMessage}
+                </div>
+            )}
+
             {/* Pasek nawigacyjny z odnośnikami do strony głównej i modułów */}
             <nav className="edu-navbar" aria-label="Nawigacja główna">
                 <button
@@ -688,6 +840,13 @@ export default function App() {
                         onClick={() => setCurrentView('cryptanalysis')}
                     >
                         Kryptoanaliza / Łamanie Szyfrów
+                    </button>
+                    <button
+                        type="button"
+                        className={`nav-link-btn ${currentView === 'notes' ? 'active' : ''}`}
+                        onClick={() => setCurrentView('notes')}
+                    >
+                        Notatki / Wykresy
                     </button>
                 </div>
             </nav>
@@ -742,6 +901,8 @@ export default function App() {
                     text={caesarText}
                     onTextChange={setCaesarText}
                     onCiphertextChange={setSharedCiphertext}
+                    onTransferToAnalysis={handleTransferToAnalysis}
+                    onSaveToNotes={handleSaveToNotesFromSimulator}
                 />
             )}
 
@@ -752,6 +913,8 @@ export default function App() {
                     text={vigenereText}
                     onTextChange={setVigenereText}
                     onCiphertextChange={setSharedCiphertext}
+                    onTransferToAnalysis={handleTransferToAnalysis}
+                    onSaveToNotes={handleSaveToNotesFromSimulator}
                 />
             )}
 
@@ -760,6 +923,18 @@ export default function App() {
                 <CryptanalysisView
                     onBack={() => setCurrentView('home')}
                     initialCiphertext={sharedCiphertext}
+                    onOpenNotes={() => setCurrentView('notes')}
+                />
+            )}
+
+            {/* Widok: Panel Zarządzania Notatkami i Wykresami */}
+            {currentView === 'notes' && (
+                <NotesManagementPanel
+                    onBack={() => setCurrentView('home')}
+                    notes={notes}
+                    onAddNote={handleAddNote}
+                    onDeleteNote={handleDeleteNote}
+                    onTransferToAnalysis={handleTransferToAnalysis}
                 />
             )}
 
