@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 
-const ALPHABETS = {
-    PL: {
-        name: 'Alfabet Polski (32 znaki)',
-        chars: 'AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ'.split(''),
-    }
-};
+const FALLBACK_ALPHABET = 'AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ';
 
 const TILE_SIZE = 38;
 const TILE_GAP = 6;
 const TILE_STEP = TILE_SIZE + TILE_GAP; // 44px
 
-export default function CaesarShiftVisualizer({ shift = 3, mode = 'encrypt' }) {
+export default function CaesarShiftVisualizer({
+    shift = 3,
+    mode = 'encrypt',
+    alphabet = FALLBACK_ALPHABET,
+    languageName = 'Polski',
+}) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
-    // Sztywno ustawiony alfabet polski
-    const activeAlphabet = ALPHABETS.PL.chars;
+    const activeAlphabet = (alphabet || FALLBACK_ALPHABET).split('');
     const len = activeAlphabet.length;
+    const firstChar = activeAlphabet[0];
+    const lastChar = activeAlphabet[len - 1];
 
     const rawShift = ((Number(shift) % len) + len) % len;
     const effectiveShift = mode === 'encrypt' ? rawShift : (len - rawShift) % len;
@@ -38,10 +39,12 @@ export default function CaesarShiftVisualizer({ shift = 3, mode = 'encrypt' }) {
                 </div>
 
                 <div className="shift-visualizer__controls">
-                    <span className="shift-indicator-pill">
-                        Przesunięcie: <strong>{mode === 'encrypt' ? `+${shift}` : `-${shift}`}</strong>
+                    <span className="metadata-badge">
+                        Język: <strong>{languageName} ({len})</strong>
                     </span>
-                    {/* Usunięto przełącznik alfabetów (alpha-switch) */}
+                    <span className="shift-indicator-pill">
+                        Przesunięcie: <strong>{mode === 'encrypt' ? `+${rawShift}` : `-${rawShift}`}</strong>
+                    </span>
                 </div>
             </div>
 
@@ -50,7 +53,7 @@ export default function CaesarShiftVisualizer({ shift = 3, mode = 'encrypt' }) {
                     <div className="shift-visualizer__labels">
                         <div className="row-tag row-tag--top">
                             <span>Tekst jawny</span>
-                            <small>Stały (A-Ż)</small>
+                            <small>Stały ({firstChar}–{lastChar})</small>
                         </div>
                         <div className="row-direction-arrow">↓</div>
                         <div className="row-tag row-tag--bottom">
@@ -136,7 +139,7 @@ export default function CaesarShiftVisualizer({ shift = 3, mode = 'encrypt' }) {
                 <span className="hint-pill">
                     Wskazówka: Najedź kursorem na dowolny klocek, aby zobaczyć powiązanie między literą jawną a zaszyfrowaną.
                 </span>
-                {hoveredIndex !== null && (
+                {hoveredIndex !== null && hoveredIndex < len && (
                     <div className="hovered-match-badge">
                         Dopasowanie: <strong>{activeAlphabet[hoveredIndex]}</strong> (#{hoveredIndex})
                         &nbsp;→&nbsp;

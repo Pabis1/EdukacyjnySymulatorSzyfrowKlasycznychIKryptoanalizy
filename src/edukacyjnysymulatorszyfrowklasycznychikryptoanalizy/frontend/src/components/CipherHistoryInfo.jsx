@@ -23,7 +23,7 @@ const CIPHER_HISTORIES = {
             ),
         },
         vulnerability: {
-            title: 'Podatności i Słabe Punkty (Brute Force)',
+            title: 'Podatności i Słabe Punkty (Brute Force & NLTK)',
             summary:
                 'Szyfr Cezara posiada krytyczną słabość: przestrzeń kluczy wynosi zaledwie 25 w alfabecie łacińskim (lub 31 w polskim), co czyni go całkowicie bezbronnym wobec ataku Brute Force.',
             content: (
@@ -34,13 +34,13 @@ const CIPHER_HISTORIES = {
                             Dla alfabetu angielskiego/łacińskiego istnieje tylko <strong>25 nietrywialnych kluczy</strong> (przesunięcie o 26 daje ten sam tekst). Dla polskiego alfabetu są to <strong>31 klucze</strong>.
                         </p>
                     </div>
-                    <h4>Atak siłowy (Brute Force)</h4>
+                    <h4>Atak siłowy (Brute Force) z modelem językowym NLTK</h4>
                     <p>
-                        Kryptoanalityk nie potrzebuje żadnej wiedzy o kluczu. Wystarczy wypisać zaledwie 25 alternatywnych wersji odszyfrowanego tekstu – jedna z nich natychmiast ujawni sensowny tekst w języku naturalnym. Komputer wykonuje taki atak w ułamku milisekundy.
+                        Kryptoanalityk nie potrzebuje żadnej wiedzy o kluczu. Komputer generuje wszystkie możliwe przesunięcia w ułamku milisekundy, a model trigramowy wytrenowany na korpusie <strong>NLTK (udhr2)</strong> automatycznie oblicza prawdopodobieństwo każdego kandydata i wskazuje właściwy tekst jawny.
                     </p>
                     <h4>Kryptoanaliza częstotliwościowa</h4>
                     <p>
-                        Jako szyfr monoalfabetyczny, Szyfr Cezara nie zmienia proporcji występowania liter. Najczęstsza litera w szyfrogramie najprawdopodobniej odpowiada najczęstszej literze w języku (np. <strong>A</strong> lub <strong>E</strong> w języku polskim). Różnica ich pozycji od razu demaskuje wartość klucza.
+                        Jako szyfr monoalfabetyczny, Szyfr Cezara nie zmienia proporcji występowania liter. Najczęstsza litera w szyfrogramie najprawdopodobniej odpowiada najczęstszej literze w języku (np. <strong>A</strong> lub <strong>E</strong>). Różnica ich pozycji od razu demaskuje wartość klucza.
                     </p>
                 </>
             ),
@@ -64,7 +64,7 @@ const CIPHER_HISTORIES = {
             content: (
                 <>
                     <p>
-                        Choć nosi nazwisko francuskiego dyplomaty <strong>Blaise\'a de Vigenère</strong> (który opisał go w 1586 roku), prawdziwym twórcą idei polialfabetycznego szyfrowania ze słowem kluczowym był włoski kryptograf <strong>Giovan Battista Bellaso</strong> w 1653 roku, bazujący na tablicy <em>Tabula Recta</em> opata Johannesa Trithemiusa.
+                        Choć nosi nazwisko francuskiego dyplomaty <strong>Blaise&apos;a de Vigenère</strong> (który opisał go w 1586 roku), prawdziwym twórcą idei polialfabetycznego szyfrowania ze słowem kluczowym był włoski kryptograf <strong>Giovan Battista Bellaso</strong> w 1553 roku, bazujący na tablicy <em>Tabula Recta</em> opata Johannesa Trithemiusa.
                     </p>
                     <p>
                         W odróżnieniu od szyfrów monoalfabetycznych, ta sama litera tekstu jawnego (np. „A”) może w zależności od pozycji w słowie kluczowym zostać zaszyfrowana jako różne litery, a ta sama litera szyfrogramu może oznaczać zupełnie inne znaki źródłowe.
@@ -87,15 +87,11 @@ const CIPHER_HISTORIES = {
                     </div>
                     <h4>Test Kasiskiego (1863 r.)</h4>
                     <p>
-                        Major pruski Friedrich Kasiski zauważył, że powtarzające się fragmenty tekstu jawnego zaszyfrowane tym samym fragmentem cyklicznego klucza dają identyczne sekwencje w szyfrogramie. Odległości pomiędzy powtórzeniami są wielokrotnościami długości klucza! Znajdując największy wspólny dzielnik (NWD) tych odległości, kryptoanalityk z dużą pewnością ustala długość hasła.
+                        Major pruski Friedrich Kasiski zauważył, że powtarzające się fragmenty tekstu jawnego zaszyfrowane tym samym fragmentem cyklicznego klucza dają identyczne sekwencje w szyfrogramie. Odległości pomiędzy powtórzeniami są wielokrotnościami długości klucza!
                     </p>
                     <h4>Test Friedmana (Indeks Koincydencji)</h4>
                     <p>
-                        William Friedman w latach 20. XX wieku wprowadził miarę statystyczną – <strong>indeks koincydencji (IoC)</strong>. W języku naturalnym prawdopodobieństwo wylosowania dwóch takich samych liter wynosi ~0.060-0.068. W tekście zaszyfrowanym Vigenèrem spada ono ku wartości losowej (~0.038). Wartość IoC pozwala bezpośrednio obliczyć przybliżoną długość hasła.
-                    </p>
-                    <h4>Finał: Rozbicie na szyfry Cezara</h4>
-                    <p>
-                        Gdy długość klucza <em>L</em> jest znana, szyfrogram dzielimy na <em>L</em> strumieni: co <em>L</em>-tą literę. Każdy taki strumień to zwykły <strong>szyfr Cezara</strong> o stałym przesunięciu, który łamie się klasyczną analizą częstotliwościową w sekundy!
+                        William Friedman w latach 20. XX wieku wprowadził miarę statystyczną – <strong>indeks koincydencji (IoC)</strong>. W języku naturalnym prawdopodobieństwo wylosowania dwóch takich samych liter wynosi ~0.060-0.068. W tekście zaszyfrowanym Vigenèrem spada ono ku wartości losowej (~0.038).
                     </p>
                 </>
             ),
@@ -104,7 +100,57 @@ const CIPHER_HISTORIES = {
             title: 'Wojna Secesyjna i Charles Babbage',
             content: (
                 <p>
-                    Szyfr Vigenère\'a był szeroko używany m.in. przez Konfederację w trakcie Wojny Secesyjnej (1861–1865). Angielski polimat <strong>Charles Babbage</strong> złamał ten szyfr już w 1854 roku, jednak armia brytyjska utrzymała jego metodę w ścisłej tajemnicy ze względów militarnych podczas Wojny Krymskiej.
+                    Szyfr Vigenère&apos;a był szeroko używany m.in. przez Konfederację w trakcie Wojny Secesyjnej (1861–1865). Angielski polimat <strong>Charles Babbage</strong> złamał ten szyfr już w 1854 roku, jednak armia brytyjska utrzymała jego metodę w ścisłej tajemnicy ze względów militarnych podczas Wojny Krymskiej.
+                </p>
+            ),
+        },
+    },
+    playfair: {
+        title: 'Historia i Kryptoanaliza: Szyfr Playfair',
+        badge: 'Epoka Wiktoriańska i I Wojna Światowa',
+        origin: {
+            title: 'Charles Wheatstone i Baron Playfair (1854 r.)',
+            summary:
+                'Pierwszy w historii praktyczny szyfr digraficzny (szyfrujący pary liter zamiast pojedynczych znaków), wynaleziony w 1854 roku przez fizyka Charlesa Wheatstone’a.',
+            content: (
+                <>
+                    <p>
+                        Choć algorytm wymyślił <strong>Charles Wheatstone</strong>, nazwa pochodzi od jego przyjaciela, szkockiego barona <strong>Lyona Playfaira</strong>, który intensywnie promował ten szyfr wśród brytyjskich elit rządowych i wojskowych.
+                    </p>
+                    <p>
+                        Brytyjskie Ministerstwo Spraw Zagranicznych początkowo odrzuciło szyfr, twierdząc, że jest „zbyt skomplikowany dla dyplomatów”. Wheatstone udowodnił wówczas, że trzech na czterech chłopców z pobliskiej szkoły podstawowej potrafi nauczyć się go w 15 minut. Szyfr służył armii brytyjskiej w II wojnie burskiej, I wojnie światowej oraz częściowo podczas II wojny światowej.
+                    </p>
+                </>
+            ),
+        },
+        vulnerability: {
+            title: 'Podatności Szyfru Playfair (Analiza Digramów)',
+            summary:
+                'Szyfrowanie par liter niszczy klasyczny wykres częstotliwości pojedynczych znaków, ale pozostawia wyraźne ślady statystyczne w parach liter (digramach).',
+            content: (
+                <>
+                    <div className="callout callout--info">
+                        <strong>Dlaczego jest silniejszy niż Cezar, ale wciąż łamliwy?</strong>
+                        <p>
+                            Zamiast 25 pojedynczych liter, kryptoanalityk musi analizować <strong>600 możliwych digramów</strong> (par znaków). Mimo to struktura siatki 5x5 nakłada sztywne ograniczenia matematyczne.
+                        </p>
+                    </div>
+                    <h4>Brak samopodstawień i symetria</h4>
+                    <p>
+                        Żadna litera w Playfair nigdy nie zaszyfruje się sama w siebie, a jeśli para <strong>AB</strong> daje <strong>XY</strong>, to odwrócona para <strong>BA</strong> zawsze da <strong>YX</strong>! Ułatwia to rekonstrukcję wierszy i kolumn macierzy 5x5 na podstawie typowych dwuznaków języka (np. ang. <em>TH, HE, IN, ER</em>).
+                    </p>
+                    <h4>Wspinaczka górska (Simulated Annealing)</h4>
+                    <p>
+                        Współczesne komputery łamią szyfr Playfair bez znajomości klucza w kilka sekund, stosując algorytmy optymalizacyjne (np. symulowane wyżarzanie) oceniane modelami n-gramowymi języka naturalnego.
+                    </p>
+                </>
+            ),
+        },
+        trivia: {
+            title: 'Ciekawostka: Ocalenie Johna F. Kennedy’ego (PT-109)',
+            content: (
+                <p>
+                    W sierpniu 1943 roku podczas walk na Pacyfiku kuter torpedowy <strong>PT-109</strong> dowodzony przez przyszłego prezydenta USA <strong>Johna F. Kennedy’ego</strong> został staranowany przez japoński niszczyciel. Australijski strażnik wybrzeża nadał meldunek ratunkowy o rozbitkach zaszyfrowany właśnie <strong>szyfrem Playfair</strong>, co pozwoliło bezpiecznie uratować załogę!
                 </p>
             ),
         },
@@ -131,9 +177,9 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
 
     return (
         <>
-            <button 
-                type="button" 
-                className="secondary-button" 
+            <button
+                type="button"
+                className="secondary-button"
                 onClick={() => setIsModalOpen(true)}
                 style={{ marginTop: '0.5rem', width: 'auto', minWidth: '200px' }}
             >
@@ -141,42 +187,42 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
             </button>
 
             {isModalOpen && (
-                <div 
-                    className="modal-overlay" 
+                <div
+                    className="modal-overlay"
                     onClick={() => setIsModalOpen(false)}
                     style={{
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                         backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                        zIndex: 9999, display: 'flex', justifyContent: 'center', 
-                        alignItems: 'center', padding: '20px', backdropFilter: 'blur(4px)'
+                        zIndex: 9999, display: 'flex', justifyContent: 'center',
+                        alignItems: 'center', padding: '20px', backdropFilter: 'blur(4px)',
                     }}
                 >
-                    <div 
-                        className="modal-content" 
-                        onClick={e => e.stopPropagation()}
+                    <div
+                        className="modal-content"
+                        onClick={(e) => e.stopPropagation()}
                         style={{
-                            backgroundColor: '#1e293b', 
-                            borderRadius: '12px', padding: '24px', 
-                            maxWidth: '700px', width: '100%', maxHeight: '90vh', 
+                            backgroundColor: '#1e293b',
+                            borderRadius: '12px', padding: '24px',
+                            maxWidth: '700px', width: '100%', maxHeight: '90vh',
                             overflowY: 'auto', position: 'relative',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                         }}
                     >
-                        <button 
-                            onClick={() => setIsModalOpen(false)} 
+                        <button
+                            onClick={() => setIsModalOpen(false)}
                             style={{
-                                position: 'absolute', top: '16px', right: '16px', 
-                                background: 'transparent', color: '#94a3b8', 
+                                position: 'absolute', top: '16px', right: '16px',
+                                background: 'transparent', color: '#94a3b8',
                                 border: 'none', fontSize: '1.5rem', cursor: 'pointer',
-                                transition: 'color 0.2s'
+                                transition: 'color 0.2s',
                             }}
-                            onMouseEnter={e => e.target.style.color = '#fff'}
-                            onMouseLeave={e => e.target.style.color = '#94a3b8'}
+                            onMouseEnter={(e) => { e.target.style.color = '#fff'; }}
+                            onMouseLeave={(e) => { e.target.style.color = '#94a3b8'; }}
                         >
                             ✖
                         </button>
-                        
-                        <aside className="cipher-history-panel" aria-label="Informacje historyczne i kryptoanalityczne" style={{boxShadow: 'none', border: 'none', padding: 0}}>
+
+                        <aside className="cipher-history-panel" aria-label="Informacje historyczne i kryptoanalityczne" style={{ boxShadow: 'none', border: 'none', padding: 0 }}>
                             <div className="cipher-history-panel__header" style={{ marginBottom: '1.5rem', paddingRight: '2rem' }}>
                                 <span className="badge badge--history">{data.badge}</span>
                                 <h3 className="history-panel-title" style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>{data.title}</h3>
@@ -186,7 +232,6 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
                             </div>
 
                             <div className="accordion-list">
-                                {/* Sekcja 1: Pochodzenie i historia */}
                                 <div className={`accordion-item ${openSections.origin ? 'accordion-item--open' : ''}`}>
                                     <button
                                         type="button"
@@ -207,7 +252,6 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
                                     )}
                                 </div>
 
-                                {/* Sekcja 2: Słabe punkty i podatności */}
                                 <div className={`accordion-item accordion-item--vulnerability ${openSections.vulnerability ? 'accordion-item--open' : ''}`}>
                                     <button
                                         type="button"
@@ -228,7 +272,6 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
                                     )}
                                 </div>
 
-                                {/* Sekcja 3: Ciekawostka */}
                                 <div className={`accordion-item ${openSections.trivia ? 'accordion-item--open' : ''}`}>
                                     <button
                                         type="button"
