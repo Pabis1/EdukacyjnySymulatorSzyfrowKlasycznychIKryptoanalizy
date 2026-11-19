@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..core import CaesarCipher, PlayfairCipher, VigenereCipher
+from ..core import CaesarCipher, PlayfairCipher, VigenereCipher, get_language
 from .config import Settings
 
 
@@ -12,14 +12,18 @@ def get_settings() -> Settings:
     return Settings()
 
 
-@lru_cache
-def get_caesar_cipher() -> CaesarCipher:
-    return CaesarCipher()
+# Ciphers are stateless, so one instance per language is cached and shared between requests.
+# Unknown codes raise 'UnknownLanguageError', which the app turns into 400 Bad Request.
 
 
 @lru_cache
-def get_vigenere_cipher() -> VigenereCipher:
-    return VigenereCipher()
+def get_caesar_cipher(language: str) -> CaesarCipher:
+    return CaesarCipher(alphabet=get_language(language).alphabet)
+
+
+@lru_cache
+def get_vigenere_cipher(language: str) -> VigenereCipher:
+    return VigenereCipher(alphabet=get_language(language).alphabet)
 
 
 @lru_cache
@@ -27,6 +31,4 @@ def get_playfair_cipher() -> PlayfairCipher:
     return PlayfairCipher()
 
 
-CaesarCipherDep = Annotated[CaesarCipher, Depends(get_caesar_cipher)]
-VigenereCipherDep = Annotated[VigenereCipher, Depends(get_vigenere_cipher)]
 PlayfairCipherDep = Annotated[PlayfairCipher, Depends(get_playfair_cipher)]
