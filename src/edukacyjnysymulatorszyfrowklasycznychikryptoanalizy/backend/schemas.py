@@ -2,12 +2,14 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..core import DEFAULT_LANGUAGE
 from .types import (
     MAX_BRUTE_FORCE_TEXT_LENGTH,
     AlphabetIndex,
     CipherMode,
     InputText,
     Keyword,
+    LanguageCode,
     PlayfairKeyword,
     Shift,
 )
@@ -40,6 +42,18 @@ class CipherStepSchema(Schema):
     description: str
 
 
+class LanguageInfo(Schema):
+    code: str
+    name: str = Field(description="Language name in that language, e.g. 'Polski'.")
+    alphabet: str
+    alphabet_len: int = Field(gt=0)
+
+
+class LanguagesResponse(Schema):
+    default: str
+    languages: list[LanguageInfo]
+
+
 class CipherInfo(Schema):
     cipher_type: Literal["Caesar", "Vigenere", "Playfair"]
     alphabet: str
@@ -47,6 +61,7 @@ class CipherInfo(Schema):
 
 
 class CiphersResponse(Schema):
+    language: str = Field(description="Language used for the Caesar and Vigenere alphabets.")
     ciphers: list[CipherInfo]
 
 
@@ -58,6 +73,7 @@ class CaesarRequest(Schema):
 
     text: InputText
     shift: Shift
+    language: LanguageCode = DEFAULT_LANGUAGE
 
 
 CaesarCharDetails = Annotated[ModifiedCharDetails | UnmodifiedCharDetails, Field(discriminator="is_modified")]
@@ -91,6 +107,7 @@ class CaesarBruteForceRequest(Schema):
         ),
         examples=["ŹCLPH"],
     )
+    language: LanguageCode = DEFAULT_LANGUAGE
 
 
 class CaesarBruteForceCandidate(Schema):
@@ -113,6 +130,7 @@ class VigenereRequest(Schema):
 
     text: InputText
     keyword: Keyword
+    language: LanguageCode = DEFAULT_LANGUAGE
 
 
 class VigenereModifiedCharDetails(ModifiedCharDetails):

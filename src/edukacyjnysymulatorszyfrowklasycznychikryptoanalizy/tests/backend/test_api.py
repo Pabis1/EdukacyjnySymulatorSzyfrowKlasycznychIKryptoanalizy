@@ -175,3 +175,95 @@ def test_playfair_decrypt_rejects_invalid_ciphertext(client, ciphertext, message
 def test_playfair_invalid_request(client, payload):
     response = client.post("/api/v1/playfair/encrypt", json=payload)
     assert response.status_code == 422
+
+
+def test_list_languages(client):
+    response = client.get("/api/v1/languages")
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["default"] == "pl"
+    languages = {lang["code"]: lang for lang in body["languages"]}
+    assert list(languages) == ["pl", "de", "el", "en", "es"]
+    assert languages["el"]["alphabet"] == "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
+    assert all(lang["alphabet_len"] == len(lang["alphabet"]) for lang in languages.values())
+
+
+def test_list_ciphers_for_language(client):
+    response = client.get("/api/v1/ciphers", params={"language": "en"})
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["language"] == "en"
+    ciphers = {c["cipher_type"]: c for c in body["ciphers"]}
+    assert ciphers["Caesar"]["alphabet"] == ciphers["Vigenere"]["alphabet"] == "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    assert ciphers["Playfair"]["alphabet_len"] == 25
+
+
+def test_requests_default_to_polish(client):
+    explicit = client.post("/api/v1/caesar/encrypt", json={"text": "Ż", "shift": 1, "language": "pl"}).json()
+    implicit = client.post("/api/v1/caesar/encrypt", json={"text": "Ż", "shift": 1}).json()
+    assert explicit == implicit
+    assert implicit["final_text"] == "A"
+
+
+@pytest.mark.parametrize(
+    ("language", "text", "expected", "alphabet_len"),
+    [("en", "Xyz", "Yza", 26), ("es", "Niño", "Ñjop", 27), ("el", "Ωμέγα", "Ανέδβ", 24)],
+)
+def test_caesar_encrypt_in_language(client, language, text, expected, alphabet_len):
+    response = client.post("/api/v1/caesar/encrypt", json={"text": text, "shift": 1, "language": language})
+    assert response.status_code == 200
+    assert response.json()["final_text"] == expected
+    assert response.json()["metadata"]["alphabet_len"] == alphabet_len
+
+
+def test_caesar_brute_force_in_language(client):
+    ciphertext = client.post(
+        "/api/v1/caesar/encrypt", json={"text": "Hallo Welt", "shift": 4, "language": "de"}
+    ).json()["final_text"]
+
+    body = client.post("/api/v1/caesar/brute-force", json={"text": ciphertext, "language": "de"}).json()
+    assert body["alphabet_len"] == 29
+    assert len(body["candidates"]) == 28
+    assert body["candidates"][3] == {"shift": 4, "text": "Hallo Welt"}
+
+
+def test_vigenere_roundtrip_in_greek(client):
+    text = "Καλημέρα κόσμε!"
+    payload = {"keyword": "κλειδί", "language": "el"}
+    encrypted = client.post("/api/v1/vigenere/encrypt", json={"text": text, **payload}).json()
+    assert encrypted["metadata"]["keyword"] == "ΚΛΕΙΔ"
+    decrypted = client.post("/api/v1/vigenere/decrypt", json={"text": encrypted["final_text"], **payload}).json()
+    assert decrypted["final_text"] == text
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "payload"),
+    [
+        ("post", "/api/v1/caesar/encrypt", {"text": "A", "shift": 1, "language": "xx"}),
+        ("post", "/api/v1/caesar/decrypt", {"text": "A", "shift": 1, "language": "PL"}),
+        ("post", "/api/v1/caesar/brute-force", {"text": "A", "language": "klingon"}),
+        ("post", "/api/v1/vigenere/encrypt", {"text": "A", "keyword": "B", "language": ""}),
+        ("post", "/api/v1/vigenere/decrypt", {"text": "A", "keyword": "B", "language": "xx"}),
+        ("get", "/api/v1/ciphers?language=xx", None),
+    ],
+    ids=[
+        "caesar-encrypt",
+        "caesar-decrypt-uppercase",
+        "brute-force",
+        "vigenere-encrypt-empty",
+        "vigenere-decrypt",
+        "ciphers",
+    ],
+)
+def test_unknown_language_returns_400(client, method, path, payload):
+    response = client.request(method, path, json=payload)
+    assert response.status_code == 400
+    assert "Nieobsługiwany język" in response.json()["detail"]
+
+
+def test_vigenere_keyword_outside_language_alphabet(client):
+    # Latin keyword has no letters from the Greek alphabet.
+    response = client.post("/api/v1/vigenere/encrypt", json={"text": "Καλημέρα", "keyword": "KEY", "language": "el"})
+    assert response.status_code == 422
