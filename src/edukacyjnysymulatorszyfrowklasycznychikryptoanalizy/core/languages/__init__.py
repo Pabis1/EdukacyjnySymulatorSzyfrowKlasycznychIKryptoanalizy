@@ -1,6 +1,7 @@
 """Registry of supported languages, loaded from the '*.json' configs in this package.
 
-Adding a language only requires a new '<code>.json' file with 'code', 'name' and 'alphabet'.
+Adding a language only requires a new '<code>.json' file with 'code', 'name', 'alphabet' and
+'corpus_fileid' (its text in the NLTK 'udhr2' corpus).
 """
 
 import json
@@ -16,6 +17,8 @@ class Language:
     code: str
     name: str
     alphabet: str
+    # File in the NLTK 'udhr2' corpus used to train the language model for cryptanalysis.
+    corpus_fileid: str
 
     def __post_init__(self) -> None:
         if not self.alphabet:

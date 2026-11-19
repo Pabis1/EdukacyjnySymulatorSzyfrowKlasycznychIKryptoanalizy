@@ -113,12 +113,21 @@ class CaesarBruteForceRequest(Schema):
 class CaesarBruteForceCandidate(Schema):
     shift: int = Field(gt=0, description="Shift used to decrypt the ciphertext.")
     text: str = Field(description="Ciphertext decrypted with this shift.")
+    probability: float = Field(
+        ge=0,
+        le=1,
+        description="Probability that this is the plaintext, according to the NLTK-trained model of the language.",
+    )
 
 
 class CaesarBruteForceResponse(Schema):
     candidates: list[CaesarBruteForceCandidate] = Field(
-        description="One candidate per non-trivial shift, ordered by shift (1 to alphabet_len - 1)."
+        description=(
+            "One candidate per non-trivial shift (1 to alphabet_len - 1), most probable first. "
+            "Probabilities sum to 1."
+        )
     )
+    language: str
     alphabet_len: int = Field(gt=0)
 
 

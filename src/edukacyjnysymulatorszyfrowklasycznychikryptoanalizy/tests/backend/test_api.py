@@ -87,9 +87,23 @@ def test_caesar_brute_force_returns_every_shift(client):
     assert response.status_code == 200
 
     body = response.json()
+    assert body["language"] == "pl"
     assert body["alphabet_len"] == 32
-    assert [c["shift"] for c in body["candidates"]] == list(range(1, 32))
-    assert body["candidates"][4] == {"shift": 5, "text": "Tajne, hasło!"}
+    assert sorted(c["shift"] for c in body["candidates"]) == list(range(1, 32))
+    assert sum(c["probability"] for c in body["candidates"]) == pytest.approx(1)
+
+
+def test_caesar_brute_force_ranks_plaintext_first(client):
+    ciphertext = client.post(
+        "/api/v1/caesar/encrypt", json={"text": "Spotkajmy się jutro o ósmej", "shift": 5}
+    ).json()["final_text"]
+
+    candidates = client.post("/api/v1/caesar/brute-force", json={"text": ciphertext}).json()["candidates"]
+    assert candidates[0]["shift"] == 5
+    assert candidates[0]["text"] == "Spotkajmy się jutro o ósmej"
+    assert candidates[0]["probability"] > 0.99
+    probabilities = [c["probability"] for c in candidates]
+    assert probabilities == sorted(probabilities, reverse=True)
 
 
 def test_caesar_brute_force_accepts_text_at_limit(client):
@@ -224,9 +238,12 @@ def test_caesar_brute_force_in_language(client):
     ).json()["final_text"]
 
     body = client.post("/api/v1/caesar/brute-force", json={"text": ciphertext, "language": "de"}).json()
+    assert body["language"] == "de"
     assert body["alphabet_len"] == 29
     assert len(body["candidates"]) == 28
-    assert body["candidates"][3] == {"shift": 4, "text": "Hallo Welt"}
+    assert body["candidates"][0]["shift"] == 4
+    assert body["candidates"][0]["text"] == "Hallo Welt"
+    assert body["candidates"][0]["probability"] > 0.9
 
 
 def test_vigenere_roundtrip_in_greek(client):

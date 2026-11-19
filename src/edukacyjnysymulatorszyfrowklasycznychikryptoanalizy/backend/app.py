@@ -1,11 +1,21 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import APIRouter, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from ..core import DEFAULT_LANGUAGE, LANGUAGES, UnknownLanguageError, caesar_brute_force
+from ..core import (
+    DEFAULT_LANGUAGE,
+    LANGUAGES,
+    UnknownLanguageError,
+    rank_caesar_candidates,
+)
 from .deps import (
+    LanguageModelsDep,
     PlayfairCipherDep,
     get_caesar_cipher,
+    get_language_models,
     get_settings,
     get_vigenere_cipher,
 )
@@ -26,7 +36,15 @@ from .schemas import (
 )
 from .types import MAX_BRUTE_FORCE_TEXT_LENGTH, LanguageCode
 
-app = FastAPI(title="Classical Ciphers Simulator API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Train the language models before serving, so the first brute force request is not slow.
+    get_language_models()
+    yield
+
+
+app = FastAPI(title="Classical Ciphers Simulator API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,
@@ -88,7 +106,7 @@ def caesar_decrypt(payload: CaesarRequest) -> CaesarResponse:
     tags=["caesar"],
     responses={status.HTTP_413_CONTENT_TOO_LARGE: {"description": "Ciphertext is too long to brute force."}},
 )
-def caesar_brute_force_attack(payload: CaesarBruteForceRequest) -> CaesarBruteForceResponse:
+def caesar_brute_force_attack(payload: CaesarBruteForceRequest, models: LanguageModelsDep) -> CaesarBruteForceResponse:
     cipher = get_caesar_cipher(payload.language)
     # Checked here instead of via 'max_length' so the client gets 413, not a generic 422.
     if len(payload.text) > MAX_BRUTE_FORCE_TEXT_LENGTH:
@@ -96,9 +114,10 @@ def caesar_brute_force_attack(payload: CaesarBruteForceRequest) -> CaesarBruteFo
             status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"Ciphertext exceeds the brute force limit of {MAX_BRUTE_FORCE_TEXT_LENGTH} characters.",
         )
-    results = caesar_brute_force(payload.text, cipher_instance=cipher)
+    ranked = rank_caesar_candidates(payload.text, cipher, models[payload.language])
     return CaesarBruteForceResponse(
-        candidates=[CaesarBruteForceCandidate(shift=shift, text=text) for shift, text in sorted(results.items())],
+        candidates=[CaesarBruteForceCandidate(shift=c.shift, text=c.text, probability=c.probability) for c in ranked],
+        language=payload.language,
         alphabet_len=cipher.alphabet_len,
     )
 

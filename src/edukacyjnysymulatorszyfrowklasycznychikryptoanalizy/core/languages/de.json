@@ -1,5 +1,6 @@
 {
     "code": "de",
     "name": "Deutsch",
-    "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ"
+    "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ",
+    "corpus_fileid": "deu.txt"
 }

@@ -1,5 +1,6 @@
 {
     "code": "en",
     "name": "English",
-    "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "corpus_fileid": "eng.txt"
 }

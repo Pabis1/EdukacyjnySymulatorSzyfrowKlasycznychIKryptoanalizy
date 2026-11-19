@@ -37,7 +37,7 @@ def test_unknown_language_raises():
 )
 def test_language_rejects_invalid_alphabet(alphabet):
     with pytest.raises(ValueError):
-        Language(code="xx", name="Test", alphabet=alphabet)
+        Language(code="xx", name="Test", alphabet=alphabet, corpus_fileid="xx.txt")
 
 
 @pytest.mark.parametrize(
