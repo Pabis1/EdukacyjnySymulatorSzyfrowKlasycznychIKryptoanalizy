@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..core import CaesarCipher, VigenereCipher
+from ..core import CaesarCipher, PlayfairCipher, VigenereCipher
 from .config import Settings
 
 
@@ -22,5 +22,11 @@ def get_vigenere_cipher() -> VigenereCipher:
     return VigenereCipher()
 
 
+@lru_cache
+def get_playfair_cipher() -> PlayfairCipher:
+    return PlayfairCipher()
+
+
 CaesarCipherDep = Annotated[CaesarCipher, Depends(get_caesar_cipher)]
 VigenereCipherDep = Annotated[VigenereCipher, Depends(get_vigenere_cipher)]
+PlayfairCipherDep = Annotated[PlayfairCipher, Depends(get_playfair_cipher)]

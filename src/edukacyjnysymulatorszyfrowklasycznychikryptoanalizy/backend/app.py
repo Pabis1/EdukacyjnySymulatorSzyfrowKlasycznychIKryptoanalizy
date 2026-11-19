@@ -2,7 +2,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..core import caesar_brute_force
-from .deps import CaesarCipherDep, VigenereCipherDep, get_settings
+from .deps import CaesarCipherDep, PlayfairCipherDep, VigenereCipherDep, get_settings
 from .schemas import (
     CaesarBruteForceCandidate,
     CaesarBruteForceRequest,
@@ -11,6 +11,8 @@ from .schemas import (
     CaesarResponse,
     CipherInfo,
     CiphersResponse,
+    PlayfairRequest,
+    PlayfairResponse,
     VigenereRequest,
     VigenereResponse,
 )
@@ -28,11 +30,14 @@ api = APIRouter(prefix="/api/v1")
 
 
 @api.get("/ciphers", response_model=CiphersResponse, tags=["ciphers"])
-def list_ciphers(caesar: CaesarCipherDep, vigenere: VigenereCipherDep) -> CiphersResponse:
+def list_ciphers(
+    caesar: CaesarCipherDep, vigenere: VigenereCipherDep, playfair: PlayfairCipherDep
+) -> CiphersResponse:
     return CiphersResponse(
         ciphers=[
             CipherInfo(cipher_type="Caesar", alphabet=caesar.alphabet, alphabet_len=caesar.alphabet_len),
             CipherInfo(cipher_type="Vigenere", alphabet=vigenere.alphabet, alphabet_len=vigenere.alphabet_len),
+            CipherInfo(cipher_type="Playfair", alphabet=playfair.alphabet, alphabet_len=len(playfair.alphabet)),
         ]
     )
 
@@ -85,6 +90,29 @@ def vigenere_decrypt(payload: VigenereRequest, cipher: VigenereCipherDep) -> Vig
         # Raised by the core when the keyword has no letters from the cipher alphabet.
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
     return VigenereResponse.model_validate(result)
+
+
+@api.post("/playfair/encrypt", response_model=PlayfairResponse, tags=["playfair"])
+def playfair_encrypt(payload: PlayfairRequest, cipher: PlayfairCipherDep) -> PlayfairResponse:
+    return PlayfairResponse.model_validate(cipher.encrypt(payload.text, keyword=payload.keyword))
+
+
+@api.post(
+    "/playfair/decrypt",
+    response_model=PlayfairResponse,
+    tags=["playfair"],
+    responses={
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Ciphertext has an odd number of letters or a digram made of two identical letters."
+        }
+    },
+)
+def playfair_decrypt(payload: PlayfairRequest, cipher: PlayfairCipherDep) -> PlayfairResponse:
+    try:
+        result = cipher.decrypt(payload.text, keyword=payload.keyword)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from exc
+    return PlayfairResponse.model_validate(result)
 
 
 app.include_router(api)
