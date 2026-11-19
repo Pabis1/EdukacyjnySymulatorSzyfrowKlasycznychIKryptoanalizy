@@ -14,6 +14,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock .python-version README.md ./
 RUN uv sync --locked --no-install-project
 
+# Corpus for the brute force language models, fetched at build time so the app never downloads at startup.
+# '/usr/local/share/nltk_data' is on NLTK's default search path.
+RUN .venv/bin/python -m nltk.downloader -d /usr/local/share/nltk_data udhr2
+
 COPY src ./src
 RUN uv sync --locked
 

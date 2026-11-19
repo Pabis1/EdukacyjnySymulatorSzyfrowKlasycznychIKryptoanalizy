@@ -109,6 +109,56 @@ const CIPHER_HISTORIES = {
             ),
         },
     },
+    playfair: {
+        title: 'Historia i Kryptoanaliza: Szyfr Playfair',
+        badge: 'XIX wiek i Wojny Światowe',
+        origin: {
+            title: 'Pochodzenie i Sir Charles Wheatstone',
+            summary:
+                'Choć nosi imię Lorda Playfaira, który go promował, szyfr został opracowany w 1854 roku przez wybitnego naukowca Charlesa Wheatstone’a.',
+            content: (
+                <>
+                    <p>
+                        Lord Lyon Playfair zaprezentował ten szyfr brytyjskim dyplomatom i wojskowym. Był to <strong>pierwszy w historii praktyczny szyfr digraficzny</strong> – szyfrujący całe pary liter zamiast pojedynczych znaków na podstawie macierzy 5×5.
+                    </p>
+                    <p>
+                        Dzięki operacjom na parach liter szyfr ten znacznie lepiej opiera się prostej analizie częstotliwościowej pojedynczych liter. Był z sukcesem wykorzystywany przez armię brytyjską w wojnach burskich oraz podczas I i II Wojny Światowej do szyfrowania meldunków taktycznych na szczeblu polowym.
+                    </p>
+                </>
+            ),
+        },
+        vulnerability: {
+            title: 'Słabości i Kryptoanaliza Digramów',
+            summary:
+                'Zamiast 25 pojedynczych liter kryptoanalityk bada 600 możliwych digramów. Rozkład par liter nadal ujawnia strukturę języka naturalnego.',
+            content: (
+                <>
+                    <div className="callout callout--danger">
+                        <strong>Kluczowa cecha digraficzna:</strong>
+                        <p>
+                            W języku naturalnym pewne pary liter występują znacznie częściej niż inne (np. w angielskim „TH”, „HE”, „IN”, a w polskim „ST”, „PR”, „OW”).
+                        </p>
+                    </div>
+                    <h4>Analiza częstotliwości digramów</h4>
+                    <p>
+                        Przy odpowiednio długim szyfrogramie najczęstsze pary kryptogramu odpowiadają najczęstszym digramom danego języka, co pozwala zrekonstruować siatkę 5×5 bez znajomości hasła.
+                    </p>
+                    <h4>Brak możliwości zaszyfrowania litery w samą siebie w parze</h4>
+                    <p>
+                        Litera w szyfrze Playfair nigdy nie może zostać zaszyfrowana jako ona sama w ramach tej samej pary znaków. Jeśli para „TH” szyfruje się do „XQ”, to ani pierwsza litera nie może być „T”, ani druga „H”. Ta reguła jest potężną wskazówką dla kryptoanalityka eliminującą tysiące fałszywych permutacji klucza.
+                    </p>
+                </>
+            ),
+        },
+        trivia: {
+            title: 'Ciekawostka: John F. Kennedy i PT-109',
+            content: (
+                <p>
+                    Podczas II Wojny Światowej na Pacyfiku, gdy kuter torpedowy PT-109 dowodzony przez przyszłego prezydenta USA Johna F. Kennedy’ego został zatopiony przez japoński niszczyciel, meldunek o ocaleniu załogi został nadany przez australijskiego obserwatora właśnie przy użyciu szyfru Playfair.
+                </p>
+            ),
+        },
+    },
 };
 
 export default function CipherHistoryInfo({ cipherType = 'caesar' }) {

@@ -3,6 +3,8 @@ from typing import Annotated
 
 from pydantic import Field
 
+from ..core import DEFAULT_LANGUAGE, LANGUAGES
+
 MAX_TEXT_LENGTH = 10_000
 MAX_SHIFT_MAGNITUDE = 1_000
 MAX_KEYWORD_LENGTH = 1_000
@@ -43,5 +45,29 @@ Keyword = Annotated[
         max_length=MAX_KEYWORD_LENGTH,
         description="Cipher key. Characters outside the cipher alphabet are ignored; at least one must belong to it.",
         examples=["KLUCZ"],
+    ),
+]
+
+PlayfairKeyword = Annotated[
+    str,
+    Field(
+        max_length=MAX_KEYWORD_LENGTH,
+        description=(
+            "Key used to build the 5x5 grid. 'J' is treated as 'I' and characters outside A-Z are ignored; "
+            "an empty key yields the plain alphabetical grid."
+        ),
+        examples=["PLAYFAIR"],
+    ),
+]
+
+LanguageCode = Annotated[
+    str,
+    Field(
+        description=(
+            "Language whose alphabet the cipher uses. Unsupported codes are rejected with 400 Bad Request; "
+            "see 'GET /api/v1/languages'."
+        ),
+        json_schema_extra={"enum": list(LANGUAGES)},
+        examples=[DEFAULT_LANGUAGE],
     ),
 ]

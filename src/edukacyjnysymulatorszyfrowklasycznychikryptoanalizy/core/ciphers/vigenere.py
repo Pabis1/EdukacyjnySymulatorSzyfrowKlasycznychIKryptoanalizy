@@ -1,9 +1,10 @@
 from ..base import BaseCipher
+from ..languages import DEFAULT_LANGUAGE, LANGUAGES
 from ..models import CipherResult, CipherStep
 
 
 class VigenereCipher(BaseCipher):
-    def __init__(self, alphabet: str = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ"):
+    def __init__(self, alphabet: str = LANGUAGES[DEFAULT_LANGUAGE].alphabet):
         self.alphabet = alphabet
         self.alphabet_len = len(alphabet)
 

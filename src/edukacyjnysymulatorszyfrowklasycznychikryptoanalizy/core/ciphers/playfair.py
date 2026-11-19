@@ -9,10 +9,18 @@ class PlayfairCipher(BaseCipher):
         self.alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
         self.grid_size = 5
 
+    @staticmethod
+    def _normalize(text: str) -> str:
+        """Uppercases, merges 'J' into 'I' and drops everything outside the 5x5 alphabet."""
+        return re.sub(r'[^A-Z]', '', text.upper().replace("J", "I"))
+
+    @staticmethod
+    def _filler_for(char: str) -> str:
+        return "Q" if char == "X" else "X"
+
     def _generate_matrix(self, keyword: str) -> tuple[
         dict[str, tuple[int, int]], dict[tuple[int, int], str], list[str]]:
-        keyword = keyword.upper().replace("J", "I")
-        keyword = re.sub(r'[^A-Z]', '', keyword)
+        keyword = self._normalize(keyword)
 
         matrix_chars = []
         seen = set()
@@ -32,8 +40,7 @@ class PlayfairCipher(BaseCipher):
         return char_to_pos, pos_to_char, matrix_chars
 
     def _prepare_text(self, text: str) -> list[str]:
-        text = text.upper().replace("J", "I")
-        clean_text = re.sub(r'[^A-Z]', '', text)
+        clean_text = self._normalize(text)
 
         pairs = []
         i = 0
@@ -42,13 +49,13 @@ class PlayfairCipher(BaseCipher):
             if i + 1 < len(clean_text):
                 char2 = clean_text[i + 1]
                 if char1 == char2:
-                    pairs.append(char1 + "X")
+                    pairs.append(char1 + self._filler_for(char1))
                     i += 1
                 else:
                     pairs.append(char1 + char2)
                     i += 2
             else:
-                pairs.append(char1 + "X")
+                pairs.append(char1 + self._filler_for(char1))
                 i += 1
         return pairs
 
@@ -61,17 +68,18 @@ class PlayfairCipher(BaseCipher):
         if mode == "encrypt":
             pairs = self._prepare_text(text)
         else:
-            clean_text = re.sub(r'[^A-Z]', '', text.upper().replace("J", "I"))
+            clean_text = self._normalize(text)
+            if len(clean_text) % 2:
+                raise ValueError("Szyfrogram Playfair musi mieć parzystą liczbę liter.")
             pairs = [clean_text[i:i + 2] for i in range(0, len(clean_text), 2)]
+            if any(pair[0] == pair[1] for pair in pairs):
+                raise ValueError("Szyfrogram Playfair nie może zawierać digramu z dwiema takimi samymi literami.")
 
         steps = []
         result_chars = []
         shift = 1 if mode == "encrypt" else -1
 
         for i, pair in enumerate(pairs):
-            if len(pair) != 2:
-                continue
-
             char1, char2 = pair[0], pair[1]
             r1, c1 = char_to_pos[char1]
             r2, c2 = char_to_pos[char2]
@@ -111,7 +119,7 @@ class PlayfairCipher(BaseCipher):
             metadata={
                 "cipher_type": "Playfair",
                 "mode": mode,
-                "keyword": keyword,
+                "keyword": self._normalize(keyword),
                 "matrix_1d": matrix_chars
             }
         )

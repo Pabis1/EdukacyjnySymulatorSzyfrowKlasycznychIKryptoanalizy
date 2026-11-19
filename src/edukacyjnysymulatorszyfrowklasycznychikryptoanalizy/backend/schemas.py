@@ -2,12 +2,15 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..core import DEFAULT_LANGUAGE
 from .types import (
     MAX_BRUTE_FORCE_TEXT_LENGTH,
     AlphabetIndex,
     CipherMode,
     InputText,
     Keyword,
+    LanguageCode,
+    PlayfairKeyword,
     Shift,
 )
 
@@ -39,13 +42,26 @@ class CipherStepSchema(Schema):
     description: str
 
 
+class LanguageInfo(Schema):
+    code: str
+    name: str = Field(description="Language name in that language, e.g. 'Polski'.")
+    alphabet: str
+    alphabet_len: int = Field(gt=0)
+
+
+class LanguagesResponse(Schema):
+    default: str
+    languages: list[LanguageInfo]
+
+
 class CipherInfo(Schema):
-    cipher_type: Literal["Caesar", "Vigenere"]
+    cipher_type: Literal["Caesar", "Vigenere", "Playfair"]
     alphabet: str
     alphabet_len: int = Field(gt=0)
 
 
 class CiphersResponse(Schema):
+    language: str = Field(description="Language used for the Caesar and Vigenere alphabets.")
     ciphers: list[CipherInfo]
 
 
@@ -57,6 +73,7 @@ class CaesarRequest(Schema):
 
     text: InputText
     shift: Shift
+    language: LanguageCode = DEFAULT_LANGUAGE
 
 
 CaesarCharDetails = Annotated[ModifiedCharDetails | UnmodifiedCharDetails, Field(discriminator="is_modified")]
@@ -90,17 +107,27 @@ class CaesarBruteForceRequest(Schema):
         ),
         examples=["ŹCLPH"],
     )
+    language: LanguageCode = DEFAULT_LANGUAGE
 
 
 class CaesarBruteForceCandidate(Schema):
     shift: int = Field(gt=0, description="Shift used to decrypt the ciphertext.")
     text: str = Field(description="Ciphertext decrypted with this shift.")
+    probability: float = Field(
+        ge=0,
+        le=1,
+        description="Probability that this is the plaintext, according to the NLTK-trained model of the language.",
+    )
 
 
 class CaesarBruteForceResponse(Schema):
     candidates: list[CaesarBruteForceCandidate] = Field(
-        description="One candidate per non-trivial shift, ordered by shift (1 to alphabet_len - 1)."
+        description=(
+            "One candidate per non-trivial shift (1 to alphabet_len - 1), most probable first. "
+            "Probabilities sum to 1."
+        )
     )
+    language: str
     alphabet_len: int = Field(gt=0)
 
 
@@ -112,6 +139,7 @@ class VigenereRequest(Schema):
 
     text: InputText
     keyword: Keyword
+    language: LanguageCode = DEFAULT_LANGUAGE
 
 
 class VigenereModifiedCharDetails(ModifiedCharDetails):
@@ -137,3 +165,53 @@ class VigenereResponse(Schema):
     final_text: str
     steps: list[VigenereStepSchema]
     metadata: VigenereMetadata
+
+
+# --- Playfair ---
+
+PLAYFAIR_GRID_CELLS = 25
+
+
+class PlayfairRequest(Schema):
+    model_config = ConfigDict(extra="forbid")
+
+    text: InputText
+    keyword: PlayfairKeyword = ""
+
+
+GridPosition = Annotated[
+    list[Annotated[int, Field(ge=0, le=4)]],
+    Field(min_length=2, max_length=2, description="'[row, column]' in the 5x5 grid."),
+]
+
+
+class PlayfairDigramDetails(Schema):
+    is_modified: Literal[True]
+    rule_applied: Literal["Wiersz", "Kolumna", "Prostokąt"] = Field(
+        description="Playfair rule used for the digram: same row, same column or rectangle."
+    )
+    pos1: GridPosition
+    pos2: GridPosition
+
+
+class PlayfairStepSchema(CipherStepSchema):
+    input_char: str = Field(min_length=2, max_length=2, description="Input digram.")
+    output_char: str = Field(min_length=2, max_length=2, description="Output digram.")
+    operation_details: PlayfairDigramDetails
+
+
+class PlayfairMetadata(Schema):
+    cipher_type: Literal["Playfair"]
+    mode: CipherMode
+    keyword: str = Field(description="Keyword after normalization: uppercased, 'J' merged into 'I', non A-Z removed.")
+    matrix_1d: list[str] = Field(
+        min_length=PLAYFAIR_GRID_CELLS,
+        max_length=PLAYFAIR_GRID_CELLS,
+        description="The 5x5 grid flattened row by row.",
+    )
+
+
+class PlayfairResponse(Schema):
+    final_text: str = Field(description="Letters only, uppercase, without spaces or punctuation.")
+    steps: list[PlayfairStepSchema]
+    metadata: PlayfairMetadata

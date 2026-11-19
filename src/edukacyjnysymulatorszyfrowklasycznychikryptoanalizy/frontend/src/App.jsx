@@ -4,6 +4,7 @@ import CaesarShiftVisualizer from './components/CaesarShiftVisualizer';
 import CipherHistoryInfo from './components/CipherHistoryInfo';
 import CryptanalysisView from './components/CryptanalysisView';
 import NotesManagementPanel from './components/NotesManagementPanel';
+import PlayfairSimulator from './components/PlayfairSimulator';
 
 const INITIAL_NOTES = [
     {
@@ -38,6 +39,14 @@ const INITIAL_NOTES = [
         notes: 'Alfabet łaciński 26 liter, klucz shift = 3.',
         createdAt: '2026-11-18 16:00',
     },
+    {
+        id: 'note-5',
+        title: 'Meldunek taktyczny (Szyfr Playfair, klucz MONARCHY)',
+        cipherType: 'Szyfr Playfair',
+        content: 'BMODZBXDNABEKUDMUIXMMOUVIF',
+        notes: 'Szyfrogram digraficzny oparty na macierzy 5×5 wygenerowanej z hasła MONARCHY.',
+        createdAt: '2026-11-19 10:00',
+    },
 ];
 
 const CIPHER_MODULES = [
@@ -60,6 +69,15 @@ const CIPHER_MODULES = [
         available: true,
     },
     {
+        id: 'playfair',
+        name: 'Szyfr Playfair',
+        category: 'Kryptografia Klasyczna',
+        badge: 'Średniozaawansowany',
+        description: 'Pierwszy w historii praktyczny szyfr digraficzny. Szyfruje pary liter wykorzystując specjalną macierz 5×5 wygenerowaną na podstawie hasła.',
+        icon: '',
+        available: true,
+    },
+    {
         id: 'cryptanalysis',
         name: 'Kryptoanaliza / Łamanie Szyfrów',
         category: 'Kryptoanaliza & Statystyka',
@@ -76,15 +94,6 @@ const CIPHER_MODULES = [
         description: 'Panel zarządzania zapisanymi notatkami, próbkami szyfrogramów i wykresami. Wybierz notatkę i przenieś do analizy.',
         icon: '',
         available: true,
-    },
-    {
-        id: 'playfair',
-        name: 'Szyfr Playfair',
-        category: 'Kryptografia Klasyczna',
-        badge: 'Średniozaawansowany',
-        description: 'Pierwszy w historii praktyczny szyfr digraficzny. Szyfruje pary liter wykorzystując specjalną macierz (zazwyczaj 5x5) wygenerowaną na podstawie słowa kluczowego.',
-        icon: '',
-        available: false,
     },
 ];
 
@@ -757,6 +766,7 @@ export default function App() {
     const [currentView, setCurrentView] = useState('home');
     const [caesarText, setCaesarText] = useState('');
     const [vigenereText, setVigenereText] = useState('');
+    const [playfairText, setPlayfairText] = useState('');
     const [sharedCiphertext, setSharedCiphertext] = useState('');
     const [notes, setNotes] = useState(INITIAL_NOTES);
     const [toastMessage, setToastMessage] = useState('');
@@ -836,6 +846,13 @@ export default function App() {
                     </button>
                     <button
                         type="button"
+                        className={`nav-link-btn ${currentView === 'playfair' ? 'active' : ''}`}
+                        onClick={() => setCurrentView('playfair')}
+                    >
+                        Szyfr Playfair
+                    </button>
+                    <button
+                        type="button"
                         className={`nav-link-btn ${currentView === 'cryptanalysis' ? 'active' : ''}`}
                         onClick={() => setCurrentView('cryptanalysis')}
                     >
@@ -912,6 +929,18 @@ export default function App() {
                     onBack={() => setCurrentView('home')}
                     text={vigenereText}
                     onTextChange={setVigenereText}
+                    onCiphertextChange={setSharedCiphertext}
+                    onTransferToAnalysis={handleTransferToAnalysis}
+                    onSaveToNotes={handleSaveToNotesFromSimulator}
+                />
+            )}
+
+            {/* Widok: Symulator Playfair */}
+            {currentView === 'playfair' && (
+                <PlayfairSimulator
+                    onBack={() => setCurrentView('home')}
+                    text={playfairText}
+                    onTextChange={setPlayfairText}
                     onCiphertextChange={setSharedCiphertext}
                     onTransferToAnalysis={handleTransferToAnalysis}
                     onSaveToNotes={handleSaveToNotesFromSimulator}
