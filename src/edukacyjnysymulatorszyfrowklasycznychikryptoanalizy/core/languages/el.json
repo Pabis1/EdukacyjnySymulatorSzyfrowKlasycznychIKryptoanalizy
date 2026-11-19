@@ -1,5 +1,6 @@
 {
     "code": "el",
     "name": "Ελληνικά",
-    "alphabet": "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
+    "alphabet": "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ",
+    "corpus_fileid": "ell_monotonic.txt"
 }

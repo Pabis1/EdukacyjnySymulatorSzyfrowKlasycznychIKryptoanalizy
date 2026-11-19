@@ -1,5 +1,6 @@
 {
     "code": "es",
     "name": "Español",
-    "alphabet": "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"
+    "alphabet": "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ",
+    "corpus_fileid": "spa.txt"
 }

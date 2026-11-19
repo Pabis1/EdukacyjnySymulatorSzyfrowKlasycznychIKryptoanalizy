@@ -1,5 +1,6 @@
 {
     "code": "pl",
     "name": "Polski",
-    "alphabet": "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ"
+    "alphabet": "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ",
+    "corpus_fileid": "pol.txt"
 }

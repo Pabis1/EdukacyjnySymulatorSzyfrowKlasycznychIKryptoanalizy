@@ -1,4 +1,10 @@
-from .analysis.caesar_brute_force import caesar_brute_force
+from .analysis import (
+    CharTrigramModel,
+    RankedCandidate,
+    caesar_brute_force,
+    rank_caesar_candidates,
+    train_language_models,
+)
 from .base import BaseCipher
 from .ciphers.caesar import CaesarCipher
 from .ciphers.playfair import PlayfairCipher
@@ -17,12 +23,16 @@ __all__ = [
     "LANGUAGES",
     "BaseCipher",
     "CaesarCipher",
+    "CharTrigramModel",
     "CipherResult",
     "CipherStep",
     "Language",
     "PlayfairCipher",
+    "RankedCandidate",
     "UnknownLanguageError",
     "VigenereCipher",
     "caesar_brute_force",
-    "get_language"
+    "get_language",
+    "rank_caesar_candidates",
+    "train_language_models",
 ]
