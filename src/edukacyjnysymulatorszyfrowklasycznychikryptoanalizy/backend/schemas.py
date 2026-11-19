@@ -8,6 +8,7 @@ from .types import (
     CipherMode,
     InputText,
     Keyword,
+    PlayfairKeyword,
     Shift,
 )
 
@@ -40,7 +41,7 @@ class CipherStepSchema(Schema):
 
 
 class CipherInfo(Schema):
-    cipher_type: Literal["Caesar", "Vigenere"]
+    cipher_type: Literal["Caesar", "Vigenere", "Playfair"]
     alphabet: str
     alphabet_len: int = Field(gt=0)
 
@@ -137,3 +138,53 @@ class VigenereResponse(Schema):
     final_text: str
     steps: list[VigenereStepSchema]
     metadata: VigenereMetadata
+
+
+# --- Playfair ---
+
+PLAYFAIR_GRID_CELLS = 25
+
+
+class PlayfairRequest(Schema):
+    model_config = ConfigDict(extra="forbid")
+
+    text: InputText
+    keyword: PlayfairKeyword = ""
+
+
+GridPosition = Annotated[
+    list[Annotated[int, Field(ge=0, le=4)]],
+    Field(min_length=2, max_length=2, description="'[row, column]' in the 5x5 grid."),
+]
+
+
+class PlayfairDigramDetails(Schema):
+    is_modified: Literal[True]
+    rule_applied: Literal["Wiersz", "Kolumna", "Prostokąt"] = Field(
+        description="Playfair rule used for the digram: same row, same column or rectangle."
+    )
+    pos1: GridPosition
+    pos2: GridPosition
+
+
+class PlayfairStepSchema(CipherStepSchema):
+    input_char: str = Field(min_length=2, max_length=2, description="Input digram.")
+    output_char: str = Field(min_length=2, max_length=2, description="Output digram.")
+    operation_details: PlayfairDigramDetails
+
+
+class PlayfairMetadata(Schema):
+    cipher_type: Literal["Playfair"]
+    mode: CipherMode
+    keyword: str = Field(description="Keyword after normalization: uppercased, 'J' merged into 'I', non A-Z removed.")
+    matrix_1d: list[str] = Field(
+        min_length=PLAYFAIR_GRID_CELLS,
+        max_length=PLAYFAIR_GRID_CELLS,
+        description="The 5x5 grid flattened row by row.",
+    )
+
+
+class PlayfairResponse(Schema):
+    final_text: str = Field(description="Letters only, uppercase, without spaces or punctuation.")
+    steps: list[PlayfairStepSchema]
+    metadata: PlayfairMetadata

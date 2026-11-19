@@ -45,3 +45,15 @@ Keyword = Annotated[
         examples=["KLUCZ"],
     ),
 ]
+
+PlayfairKeyword = Annotated[
+    str,
+    Field(
+        max_length=MAX_KEYWORD_LENGTH,
+        description=(
+            "Key used to build the 5x5 grid. 'J' is treated as 'I' and characters outside A-Z are ignored; "
+            "an empty key yields the plain alphabetical grid."
+        ),
+        examples=["PLAYFAIR"],
+    ),
+]
