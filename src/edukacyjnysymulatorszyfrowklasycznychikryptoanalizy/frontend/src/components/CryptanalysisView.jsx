@@ -5,10 +5,10 @@ import SpellcheckToggleButton from './SpellcheckToggleButton';
 const POLISH_ALPHABET = 'AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ';
 
 const POLISH_NATURAL_FREQUENCIES = {
-    A: 8.91, Ą: 0.99, B: 1.47, C: 3.96, Ć: 0.40, D: 3.25, E: 7.66, Ę: 1.11,
-    F: 0.30, G: 1.42, H: 1.08, I: 8.21, J: 2.28, K: 3.51, L: 2.10, Ł: 1.82,
-    M: 2.80, N: 5.52, Ń: 0.20, O: 7.75, Ó: 0.85, P: 3.13, R: 4.69, S: 4.32,
-    Ś: 0.66, T: 3.98, U: 2.50, W: 4.65, Y: 3.76, Z: 5.64, Ź: 0.06, Ż: 0.83,
+    A: 8.91, 'Ą': 0.99, B: 1.47, C: 3.96, 'Ć': 0.40, D: 3.25, E: 7.66, 'Ę': 1.11,
+    F: 0.30, G: 1.42, H: 1.08, I: 8.21, J: 2.28, K: 3.51, L: 2.10, 'Ł': 1.82,
+    M: 2.80, N: 5.52, 'Ń': 0.20, O: 7.75, 'Ó': 0.85, P: 3.13, R: 4.69, S: 4.32,
+    'Ś': 0.66, T: 3.98, U: 2.50, W: 4.65, Y: 3.76, Z: 5.64, 'Ź': 0.06, 'Ż': 0.83,
 };
 
 function computeLocalFrequencyAnalysis(text) {
@@ -97,8 +97,18 @@ function computeBestFrequencyMatch(analysisData) {
 
     const len = POLISH_ALPHABET.length;
     const cipherFreqs = analysisData.frequencies.map((f) => f.frequency);
-    const naturalFreqs = analysisData.frequencies.map((f) => f.natural_frequency);
+    const naturalFreqs = analysisData.frequencies.map((f) => f.natural_frequency || 0);
     const naturalNorm = Math.sqrt(naturalFreqs.reduce((acc, v) => acc + v * v, 0));
+
+    if (naturalNorm === 0) {
+        return {
+            hasReliableMatch: false,
+            bestDelta: null,
+            detectedCaesarKey: null,
+            bestSimilarity: 0,
+            similarities: [],
+        };
+    }
 
     const similarities = [];
     for (let delta = 0; delta < len; delta += 1) {
@@ -621,14 +631,6 @@ export default function CryptanalysisView({
 
                 {analysisData && (
                     <div className="analysis-results-section">
-                        <div className="stats-grid">
-                            <div className="stat-card">
-                                <span className="stat-card__title">Zbadane litery alfabetu</span>
-                                <span className="stat-card__value">{analysisData.total_letters}</span>
-                                <span className="stat-card__desc">Tylko znaki polskiego alfabetu</span>
-                            </div>
-                        </div>
-
                         <div className={`chart-wrapper ${isMatched ? 'chart-wrapper--matched' : ''}`}>
                             <div className="chart-header">
                                 <div>
