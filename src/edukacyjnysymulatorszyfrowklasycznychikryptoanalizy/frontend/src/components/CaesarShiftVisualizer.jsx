@@ -19,10 +19,14 @@ export default function CaesarShiftVisualizer({
     const firstChar = activeAlphabet[0];
     const lastChar = activeAlphabet[len - 1];
 
-    const rawShift = ((Number(shift) % len) + len) % len;
-    const effectiveShift = mode === 'encrypt' ? rawShift : (len - rawShift) % len;
+    // Przesunięcie ze znakiem kierunku: szyfrowanie dodaje klucz, deszyfrowanie odejmuje.
+    // Ujemny klucz przesuwa dolny rząd w przeciwną stronę, a nie o (len - |klucz|) w tę samą.
+    const signedShift = (mode === 'encrypt' ? Number(shift) : -Number(shift)) % len;
+    const effectiveShift = ((signedShift % len) + len) % len;
+    const shiftLabel = signedShift < 0 ? `-${Math.abs(signedShift)}` : `+${signedShift}`;
+    const formulaOp = signedShift < 0 ? '-' : '+';
 
-    const startIdx = mode === 'encrypt' ? len + rawShift : len - rawShift;
+    const startIdx = len + signedShift;
     const viewportWidth = len * TILE_STEP - TILE_GAP;
     const tripleAlphabet = [...activeAlphabet, ...activeAlphabet, ...activeAlphabet];
 
@@ -43,7 +47,7 @@ export default function CaesarShiftVisualizer({
                         Język: <strong>{languageName} ({len})</strong>
                     </span>
                     <span className="shift-indicator-pill">
-                        Przesunięcie: <strong>{mode === 'encrypt' ? `+${rawShift}` : `-${rawShift}`}</strong>
+                        Przesunięcie: <strong>{shiftLabel}</strong>
                     </span>
                 </div>
             </div>
@@ -58,7 +62,7 @@ export default function CaesarShiftVisualizer({
                         <div className="row-direction-arrow">↓</div>
                         <div className="row-tag row-tag--bottom">
                             <span>Zaszyfrowany</span>
-                            <small>Przesunięty ({mode === 'encrypt' ? `+${rawShift}` : `-${rawShift}`})</small>
+                            <small>Przesunięty ({shiftLabel})</small>
                         </div>
                     </div>
 
@@ -144,7 +148,7 @@ export default function CaesarShiftVisualizer({
                         Dopasowanie: <strong>{activeAlphabet[hoveredIndex]}</strong> (#{hoveredIndex})
                         &nbsp;→&nbsp;
                         <strong>{activeAlphabet[(hoveredIndex + effectiveShift) % len]}</strong> (#{(hoveredIndex + effectiveShift) % len})
-                        &nbsp;[wzór: ({hoveredIndex} + {effectiveShift}) mod {len}]
+                        &nbsp;[wzór: ({hoveredIndex} {formulaOp} {Math.abs(signedShift)}) mod {len}]
                     </div>
                 )}
             </div>
