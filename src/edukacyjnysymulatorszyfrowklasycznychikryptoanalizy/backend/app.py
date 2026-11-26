@@ -114,9 +114,13 @@ def caesar_brute_force_attack(payload: CaesarBruteForceRequest, models: Language
             status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"Ciphertext exceeds the brute force limit of {MAX_BRUTE_FORCE_TEXT_LENGTH} characters.",
         )
-    ranked = rank_caesar_candidates(payload.text, cipher, models[payload.language])
+    ranking = rank_caesar_candidates(payload.text, cipher, models[payload.language])
     return CaesarBruteForceResponse(
-        candidates=[CaesarBruteForceCandidate(shift=c.shift, text=c.text, probability=c.probability) for c in ranked],
+        candidates=[
+            CaesarBruteForceCandidate(shift=c.shift, text=c.text, probability=c.probability)
+            for c in ranking.candidates
+        ],
+        not_caesar_probability=ranking.not_caesar_probability,
         language=payload.language,
         alphabet_len=cipher.alphabet_len,
     )

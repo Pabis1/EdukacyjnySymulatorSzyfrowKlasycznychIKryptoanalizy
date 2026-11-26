@@ -273,3 +273,50 @@ textarea {
   background: var(--success);
   border-radius: 999px;
 }
+
+/* Hipoteza "nie Cezar" w rankingu Brute Force */
+.brute-force-row--not-caesar {
+  background: rgba(248, 113, 113, 0.05);
+}
+
+.brute-force-row--not-caesar-best {
+  background: rgba(248, 113, 113, 0.14);
+}
+
+.key-pill--not-caesar {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+}
+
+.nltk-best-tag--danger {
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--danger);
+}
+
+.prob-text--danger {
+  color: var(--danger);
+}
+
+.prob-bar-fill--danger {
+  background: var(--danger);
+}
+
+.brute-force-cell-result--muted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.callout--warning {
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fcd34d;
+}
+
+.brute-force-explainer summary {
+  cursor: pointer;
+}
+
+.brute-force-explainer__formula {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--text);
+}

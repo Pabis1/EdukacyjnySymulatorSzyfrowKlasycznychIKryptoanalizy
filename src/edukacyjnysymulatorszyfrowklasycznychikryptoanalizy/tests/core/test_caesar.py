@@ -69,6 +69,18 @@ def test_caesar_negative_shifts(caesar):
     assert decrypt_result.final_text == "A"
 
 
+def test_caesar_negative_shift_formula(caesar):
+    # Wzór musi odzwierciedlać znak przesunięcia, a wynik musi się z nim zgadzać
+    enc = caesar.encrypt("A", -3)
+    assert enc.final_text == "Z"
+    assert enc.steps[0].operation_details["shift_applied"] == 29
+    assert enc.steps[0].operation_details["formula"] == "(0 - 3) mod 32 = 29"
+
+    dec = caesar.decrypt("A", -3)
+    assert dec.final_text == "C"
+    assert dec.steps[0].operation_details["formula"] == "(0 + 3) mod 32 = 3"
+
+
 def test_caesar_full_polish_pangram_idempotency(caesar):
     # Klasyczny polski pangram ze znakami interpunkcyjnymi
     original_text = "Pchnąć w tę łódź jeża lub ośm skrzyń fig! 123"

@@ -90,7 +90,19 @@ def test_caesar_brute_force_returns_every_shift(client):
     assert body["language"] == "pl"
     assert body["alphabet_len"] == 32
     assert sorted(c["shift"] for c in body["candidates"]) == list(range(1, 32))
-    assert sum(c["probability"] for c in body["candidates"]) == pytest.approx(1)
+    assert sum(c["probability"] for c in body["candidates"]) + body["not_caesar_probability"] == pytest.approx(1)
+    assert body["not_caesar_probability"] < body["candidates"][0]["probability"]
+
+
+def test_caesar_brute_force_flags_vigenere_as_not_caesar(client):
+    ciphertext = client.post(
+        "/api/v1/vigenere/encrypt",
+        json={"text": "Spotkajmy się jutro o ósmej przy dworcu głównym", "keyword": "KLUCZ"},
+    ).json()["final_text"]
+
+    body = client.post("/api/v1/caesar/brute-force", json={"text": ciphertext}).json()
+    assert body["not_caesar_probability"] > 0.99
+    assert body["candidates"][0]["probability"] < 0.01
 
 
 def test_caesar_brute_force_ranks_plaintext_first(client):

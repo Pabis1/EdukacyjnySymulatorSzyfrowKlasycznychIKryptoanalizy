@@ -47,6 +47,38 @@ const CIPHER_TYPES = [
     { id: 'playfair', label: 'Szyfr Playfair (Tylko analiza wykresu / IoC)' },
 ];
 
+// Poniżej tej pewności zwycięzcy rankingu pokazujemy ostrzeżenie, że wynik jest niepewny.
+// Próg wpływa tylko na komunikat — same prawdopodobieństwa pochodzą wprost z softmaxu backendu.
+const VERDICT_CONFIDENCE = 0.8;
+
+// Wiersz hipotezy "to nie jest Cezar" wstawiany do rankingu obok przesunięć (ten sam softmax).
+function buildRankingRows(bruteForceData) {
+    const rows = bruteForceData.candidates.map((cand) => ({ ...cand, isNotCaesar: false }));
+    const pNotCaesar = bruteForceData.not_caesar_probability;
+    if (bruteForceData.isLocalFallback || typeof pNotCaesar !== 'number') {
+        return rows;
+    }
+    const insertAt = rows.findIndex((row) => row.probability < pNotCaesar);
+    const notCaesarRow = { shift: null, text: null, probability: pNotCaesar, isNotCaesar: true };
+    rows.splice(insertAt === -1 ? rows.length : insertAt, 0, notCaesarRow);
+    return rows;
+}
+
+function ProbabilityCell({ probability, danger = false }) {
+    const pct = (probability * 100).toFixed(2);
+    return (
+        <div className="prob-cell">
+            <span className={`prob-text ${danger ? 'prob-text--danger' : ''}`}>{pct}%</span>
+            <div className="prob-bar-track">
+                <div
+                    className={`prob-bar-fill ${danger ? 'prob-bar-fill--danger' : ''}`}
+                    style={{ width: `${Math.min(100, Math.max(2, Number(pct)))}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
 function computeLocalFrequencyAnalysis(text, langInfo) {
     const alphabetStr = langInfo.alphabet;
     const natFreqs = NATURAL_FREQUENCIES[langInfo.code] || NATURAL_FREQUENCIES.pl;
@@ -294,6 +326,16 @@ export default function CryptanalysisView({
             };
         });
     }, [analysisData, chartShift]);
+
+    const rankingRows = useMemo(
+        () => (bruteForceData ? buildRankingRows(bruteForceData) : []),
+        [bruteForceData]
+    );
+    const rankingWinner = !bruteForceData?.isLocalFallback && rankingRows.length > 0 ? rankingRows[0] : null;
+    const isUncertainVerdict = rankingWinner !== null && rankingWinner.probability < VERDICT_CONFIDENCE;
+    const isNotCaesarVerdict = rankingWinner !== null && !isUncertainVerdict && rankingWinner.isNotCaesar;
+    // Rozmiar słownika modelu: litery alfabetu + znak obcej litery (#) + separator (spacja).
+    const modelVocabSize = (bruteForceData?.alphabet_len ?? activeLangInfo.alphabet_len) + 2;
 
     const liveDecryptedPreview = useMemo(() => {
         if (!cipherText.trim()) return '';
@@ -616,6 +658,41 @@ export default function CryptanalysisView({
                             </span>
                         </div>
 
+                        {isNotCaesarVerdict && (
+                            <div className="callout callout--danger" role="status">
+                                <strong>To najpewniej nie jest szyfr Cezara ({(rankingWinner.probability * 100).toFixed(2)}%).</strong>
+                                <p>
+                                    Żadne z {bruteForceData.alphabet_len - 1} przesunięć nie daje tekstu bardziej podobnego do języka ({activeLangInfo.name}) niż losowe litery. Spłaszczony rozkład wskazuje na szyfr polialfabetyczny (np. Vigenère) lub digraficzny (Playfair) — sprawdź Indeks Koincydencji i wykres częstotliwości poniżej.
+                                </p>
+                            </div>
+                        )}
+                        {isUncertainVerdict && (
+                            <div className="callout callout--warning" role="status">
+                                <strong>Wynik niepewny — najwyższa pewność to tylko {(rankingWinner.probability * 100).toFixed(2)}%.</strong>
+                                <p>
+                                    Tekst jest prawdopodobnie zbyt krótki, aby model NLTK mógł rozstrzygnąć, które przesunięcie (lub hipoteza „nie Cezar”) jest prawidłowe. Spróbuj dłuższego szyfrogramu.
+                                </p>
+                            </div>
+                        )}
+
+                        {!bruteForceData.isLocalFallback && (
+                            <details className="callout callout--info brute-force-explainer">
+                                <summary><strong>Skąd się biorą te procenty?</strong></summary>
+                                <p>
+                                    Model trygramowy NLTK ocenia każdego kandydata jako <code>ln P(tekst)</code> — sumę logarytmów prawdopodobieństw kolejnych znaków.
+                                    Do rankingu dołączona jest też hipoteza <strong>„nie Cezar”</strong>, która zakłada, że każdy znak jest losowy:
+                                </p>
+                                <p className="brute-force-explainer__formula">
+                                    ln P<sub>nie Cezar</sub> = n · ln(1/{modelVocabSize}) ≈ n · ({(-Math.log(modelVocabSize)).toFixed(2)})
+                                </p>
+                                <p>
+                                    gdzie <em>n</em> to liczba ocenianych znaków, a {modelVocabSize} to {bruteForceData.alphabet_len} liter alfabetu + obca litera + separator.
+                                    Wszystkie {bruteForceData.alphabet_len} wyniki ({bruteForceData.alphabet_len - 1} przesunięć i „nie Cezar”) trafiają do jednego softmaxu, dlatego procenty w tabeli sumują się do 100%.
+                                    Bez tej hipotezy softmax zawsze musiałby wskazać któreś przesunięcie — nawet dla losowego tekstu.
+                                </p>
+                            </details>
+                        )}
+
                         <div className="brute-force-table-wrapper">
                             <table className="brute-force-table">
                                 <thead>
@@ -629,11 +706,31 @@ export default function CryptanalysisView({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {bruteForceData.candidates.map((cand, idx) => {
+                                    {rankingRows.map((cand, idx) => {
                                         const isTopWinner = !bruteForceData.isLocalFallback && idx === 0;
-                                        const probPct = cand.probability !== null && cand.probability !== undefined
-                                            ? (cand.probability * 100).toFixed(2)
-                                            : null;
+
+                                        if (cand.isNotCaesar) {
+                                            return (
+                                                <tr
+                                                    key="not-caesar"
+                                                    className={`brute-force-row brute-force-row--not-caesar ${isTopWinner ? 'brute-force-row--not-caesar-best' : ''}`}
+                                                >
+                                                    <td className="brute-force-cell-key">
+                                                        <span className="key-pill key-pill--not-caesar">🚫 Nie Cezar</span>
+                                                        {isTopWinner && (
+                                                            <span className="nltk-best-tag nltk-best-tag--danger">🏆 #1 NLTK</span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <ProbabilityCell probability={cand.probability} danger />
+                                                    </td>
+                                                    <td className="brute-force-cell-result brute-force-cell-result--muted">
+                                                        Żadne przesunięcie — tekst bardziej przypomina losowe litery niż język naturalny.
+                                                    </td>
+                                                    <td>—</td>
+                                                </tr>
+                                            );
+                                        }
 
                                         return (
                                             <tr
@@ -648,15 +745,7 @@ export default function CryptanalysisView({
                                                 </td>
                                                 {!bruteForceData.isLocalFallback && (
                                                     <td>
-                                                        <div className="prob-cell">
-                                                            <span className="prob-text">{probPct}%</span>
-                                                            <div className="prob-bar-track">
-                                                                <div
-                                                                    className="prob-bar-fill"
-                                                                    style={{ width: `${Math.min(100, Math.max(2, Number(probPct)))}%` }}
-                                                                />
-                                                            </div>
-                                                        </div>
+                                                        <ProbabilityCell probability={cand.probability} />
                                                     </td>
                                                 )}
                                                 <td className="brute-force-cell-result">

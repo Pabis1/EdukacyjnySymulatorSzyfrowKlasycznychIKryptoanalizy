@@ -57,16 +57,21 @@ const MODES = {
         inputLabel: 'Tekst jawny (Plaintext)',
         inputPlaceholder: 'Wpisz wiadomość do zaszyfrowania...',
         outputLabel: 'Szyfrogram (Ciphertext)',
-        shiftSign: '+',
     },
     decrypt: {
         tab: 'Deszyfrowanie',
         inputLabel: 'Szyfrogram (Ciphertext)',
         inputPlaceholder: 'Wpisz szyfrogram do odszyfrowania...',
         outputLabel: 'Tekst jawny (Plaintext)',
-        shiftSign: '-',
     },
 };
+
+// Przesunięcie ze znakiem faktycznego kierunku, zgodnie z formułą backendu:
+// szyfrowanie dodaje klucz, deszyfrowanie go odejmuje (np. klucz -3 przy deszyfrowaniu daje +3).
+function formatCaesarShift(shift, mode) {
+    const signed = mode === 'encrypt' ? Number(shift) : -Number(shift);
+    return signed < 0 ? `-${Math.abs(signed)}` : `+${signed}`;
+}
 
 function CipherLanguageBar({ languages, selectedLanguage, onSelect, playfairFixed = false }) {
     if (playfairFixed) {
@@ -396,6 +401,8 @@ function CaesarSimulator({
     useEffect(() => {
         if (Number(shift) > maxShift) {
             setShift(maxShift);
+        } else if (Number(shift) < -maxShift) {
+            setShift(-maxShift);
         }
     }, [maxShift, shift]);
 
@@ -552,22 +559,22 @@ function CaesarSimulator({
                                     <label className="label" htmlFor="caesar-shift">
                                         Klucz przesunięcia ({activeLang.name})
                                     </label>
-                                    <span className="shift-value">
-                                        {modeConfig.shiftSign}{shift}
+                                    <span className="shift-value" title={`Klucz: ${shift}`}>
+                                        {formatCaesarShift(shift, mode)}
                                     </span>
                                 </div>
                                 <input
                                     id="caesar-shift"
                                     className="range"
                                     type="range"
-                                    min="1"
+                                    min={-maxShift}
                                     max={maxShift}
                                     value={shift}
                                     onChange={(e) => setShift(Number(e.target.value))}
                                 />
                                 <div className="range-scale" aria-hidden="true">
-                                    <span>1</span>
-                                    <span>{Math.floor(maxShift / 2)}</span>
+                                    <span>{-maxShift}</span>
+                                    <span>0</span>
                                     <span>{maxShift}</span>
                                 </div>
                             </div>
@@ -626,7 +633,7 @@ function CaesarSimulator({
                                         Język: <strong>{activeLang.name}</strong>
                                     </span>
                                     <span className="metadata-badge">
-                                        Przesunięcie: <strong>{modeConfig.shiftSign}{cipherPackage.metadata.shift}</strong>
+                                        Przesunięcie: <strong>{formatCaesarShift(cipherPackage.metadata.shift, cipherPackage.metadata.mode)}</strong>
                                     </span>
                                     <span className="metadata-badge">
                                         Alfabet: <strong>{cipherPackage.metadata.alphabet_len} znaków</strong>

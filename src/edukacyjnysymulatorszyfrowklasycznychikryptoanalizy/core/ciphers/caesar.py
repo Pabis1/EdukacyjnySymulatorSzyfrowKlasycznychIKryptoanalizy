@@ -26,13 +26,16 @@ class CaesarCipher(BaseCipher):
 
                 new_char = new_char_upper if is_upper else new_char_upper.lower()
 
-                formula_op = "+" if mode == "encrypt" else "-"
+                # Znak operatora wynika z kierunku faktycznego przesunięcia, więc ujemny klucz
+                # daje np. '(0 - 3) mod 32 = 29' zamiast błędnego '(0 + 3) mod 32 = 29'.
+                signed_shift = shift if mode == "encrypt" else -shift
+                formula_op = "+" if signed_shift >= 0 else "-"
                 details = {
                     "is_modified": True,
                     "original_index": original_idx,
                     "shift_applied": actual_shift,
                     "new_index": new_idx,
-                    "formula": f"({original_idx} {formula_op} {abs(shift)}) mod {self.alphabet_len} = {new_idx}"
+                    "formula": f"({original_idx} {formula_op} {abs(signed_shift)}) mod {self.alphabet_len} = {new_idx}"
                 }
                 desc = f"Znak '{char}': przesunięcie o {actual_shift} na '{new_char}'."
             else:
