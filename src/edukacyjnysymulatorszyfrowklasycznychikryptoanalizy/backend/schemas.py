@@ -124,8 +124,17 @@ class CaesarBruteForceResponse(Schema):
     candidates: list[CaesarBruteForceCandidate] = Field(
         description=(
             "One candidate per non-trivial shift (1 to alphabet_len - 1), most probable first. "
-            "Probabilities sum to 1."
+            "Their probabilities plus 'not_caesar_probability' sum to 1."
         )
+    )
+    not_caesar_probability: float = Field(
+        ge=0,
+        le=1,
+        description=(
+            "Probability that no shift yields natural language, i.e. the text is not a Caesar ciphertext "
+            "(e.g. Vigenère, Playfair or random letters). It competes with the shifts in the same softmax, "
+            "scored as if every symbol were drawn uniformly at random."
+        ),
     )
     language: str
     alphabet_len: int = Field(gt=0)
