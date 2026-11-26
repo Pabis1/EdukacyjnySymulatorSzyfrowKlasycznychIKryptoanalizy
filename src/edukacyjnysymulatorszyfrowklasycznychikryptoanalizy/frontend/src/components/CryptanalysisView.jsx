@@ -39,7 +39,7 @@ function computeLocalFrequencyAnalysis(text) {
         ioc = Number((sumF / (totalLetters * (totalLetters - 1))).toFixed(4));
     }
 
-    let interpretation = '';
+    let interpretation;
     if (totalLetters < 30) {
         interpretation = 'Zbyt krótka próbka tekstu, aby wnioskować o strukturze szyfru (zalecane min. 50-100 liter).';
     } else if (ioc >= 0.055) {
