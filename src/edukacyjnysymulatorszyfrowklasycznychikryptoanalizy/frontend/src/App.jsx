@@ -5,6 +5,7 @@ import CipherHistoryInfo from './components/CipherHistoryInfo';
 import CryptanalysisView from './components/CryptanalysisView';
 import NotesManagementPanel from './components/NotesManagementPanel';
 import PlayfairSimulator from './components/PlayfairSimulator';
+import SpellcheckToggleButton from './components/SpellcheckToggleButton';
 
 const INITIAL_NOTES = [
     {
@@ -225,6 +226,7 @@ function CaesarSimulator({
     const [error, setError] = useState('');
     const [, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
 
     const modeConfig = MODES[mode];
 
@@ -352,9 +354,15 @@ function CaesarSimulator({
 
                         <div className="controls">
                             <div className="field">
-                                <label className="label" htmlFor="caesar-input-text">
-                                    {modeConfig.inputLabel}
-                                </label>
+                                <div className="field__header">
+                                    <label className="label" htmlFor="caesar-input-text">
+                                        {modeConfig.inputLabel}
+                                    </label>
+                                    <SpellcheckToggleButton
+                                        enabled={spellCheckEnabled}
+                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                    />
+                                </div>
                                 <textarea
                                     id="caesar-input-text"
                                     className="text-area"
@@ -363,7 +371,7 @@ function CaesarSimulator({
                                     onChange={(e) => handleTextChange(e.target.value)}
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
-                                    spellCheck={false}
+                                    spellCheck={spellCheckEnabled}
                                 />
                             </div>
 
@@ -455,6 +463,7 @@ function CaesarSimulator({
                                 className="text-area text-area--result"
                                 rows={3}
                                 readOnly
+                                spellCheck={false}
                                 value={result}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
                             />
@@ -501,6 +510,7 @@ function VigenereSimulator({
     const [error, setError] = useState('');
     const [, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
 
     const modeConfig = MODES[mode];
 
@@ -629,9 +639,15 @@ function VigenereSimulator({
 
                         <div className="controls">
                             <div className="field">
-                                <label className="label" htmlFor="vigenere-input-text">
-                                    {modeConfig.inputLabel}
-                                </label>
+                                <div className="field__header">
+                                    <label className="label" htmlFor="vigenere-input-text">
+                                        {modeConfig.inputLabel}
+                                    </label>
+                                    <SpellcheckToggleButton
+                                        enabled={spellCheckEnabled}
+                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                    />
+                                </div>
                                 <textarea
                                     id="vigenere-input-text"
                                     className="text-area"
@@ -640,7 +656,7 @@ function VigenereSimulator({
                                     onChange={(e) => handleTextChange(e.target.value)}
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
-                                    spellCheck={false}
+                                    spellCheck={spellCheckEnabled}
                                 />
                             </div>
 
@@ -731,6 +747,7 @@ function VigenereSimulator({
                                 className="text-area text-area--result"
                                 rows={3}
                                 readOnly
+                                spellCheck={false}
                                 value={result}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
                             />
@@ -770,6 +787,29 @@ export default function App() {
     const [sharedCiphertext, setSharedCiphertext] = useState('');
     const [notes, setNotes] = useState(INITIAL_NOTES);
     const [toastMessage, setToastMessage] = useState('');
+    const [theme, setTheme] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+        }
+        return 'dark';
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        try {
+            window.localStorage.setItem('theme', theme);
+        } catch {
+            // Ignoruj błąd zapisu w trybie prywatnym
+        }
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#0f172a');
+        }
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    };
 
     const showToast = (msg) => {
         setToastMessage(msg);
@@ -865,6 +905,16 @@ export default function App() {
                     >
                         Notatki / Wykresy
                     </button>
+                    <button
+                        type="button"
+                        className="theme-toggle-btn"
+                        onClick={toggleTheme}
+                        aria-pressed={theme === 'light'}
+                        title={theme === 'light' ? 'Przełącz na motyw ciemny' : 'Przełącz na motyw jasny'}
+                    >
+                        <span aria-hidden="true">{theme === 'light' ? '🌙' : '☀️'}</span>
+                        <span>{theme === 'light' ? 'Motyw ciemny' : 'Motyw jasny'}</span>
+                    </button>
                 </div>
             </nav>
 
@@ -953,6 +1003,7 @@ export default function App() {
                     onBack={() => setCurrentView('home')}
                     initialCiphertext={sharedCiphertext}
                     onOpenNotes={() => setCurrentView('notes')}
+                    theme={theme}
                 />
             )}
 

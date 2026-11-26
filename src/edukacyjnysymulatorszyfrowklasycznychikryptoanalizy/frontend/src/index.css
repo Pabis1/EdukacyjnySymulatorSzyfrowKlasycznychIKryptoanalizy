@@ -1,6 +1,9 @@
 :root {
   --bg: #0f172a;
   --surface: #1e293b;
+  --surface-elevated: #172033;
+  --surface-subtle: rgba(30, 41, 59, 0.5);
+  --surface-subtle-strong: rgba(30, 41, 59, 0.7);
   --border: #334155;
   --border-strong: #475569;
   --text: #f8fafc;
@@ -11,8 +14,46 @@
   --accent-strong: #4f46e5;
   --accent-soft: #312e81;
   --accent-text: #818cf8;
+  --accent-text-strong: #c7d2fe;
   --success: #34d399;
+  --success-strong: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.16);
+  --success-border: rgba(52, 211, 153, 0.55);
+  --success-text: #6ee7b7;
   --danger: #f87171;
+  --danger-soft: rgba(239, 68, 68, 0.15);
+  --danger-border: rgba(239, 68, 68, 0.35);
+  --danger-text: #fca5a5;
+  --warning-soft: rgba(245, 158, 11, 0.16);
+  --warning-border: rgba(245, 158, 11, 0.45);
+  --warning-text: #fcd34d;
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  --shadow-nav: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --modal-overlay-bg: rgba(15, 23, 42, 0.85);
+  --badge-crypto-bg: #064e3b;
+  --badge-crypto-text: #6ee7b7;
+  --badge-history-bg: #312e81;
+  --badge-history-text: #a5b4fc;
+  --callout-danger-bg: rgba(248, 113, 113, 0.12);
+  --callout-danger-border: rgba(248, 113, 113, 0.35);
+  --callout-danger-text: #fca5a5;
+  --callout-info-bg: rgba(99, 102, 241, 0.12);
+  --callout-info-border: rgba(99, 102, 241, 0.35);
+  --callout-info-text: #c7d2fe;
+  --playfair-key-bg: rgba(99, 102, 241, 0.25);
+  --playfair-key-border: #818cf8;
+  --playfair-key-text: #ffffff;
+  --playfair-highlight-bg: rgba(234, 179, 8, 0.35);
+  --playfair-highlight-border: #eab308;
+  --playfair-highlight-text: #fef08a;
+  --tile-bottom-bg: rgba(99, 102, 241, 0.12);
+  --tile-bottom-border: rgba(99, 102, 241, 0.5);
+  --tile-bottom-text: #c7d2fe;
+  --delta-active-bg: rgba(99, 102, 241, 0.35);
+  --delta-active-border: #818cf8;
+  --delta-active-text: #ffffff;
 
   color-scheme: dark;
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -25,6 +66,66 @@
   text-size-adjust: 100%;
 }
 
+:root[data-theme='light'] {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-elevated: #e2e8f0;
+  --surface-subtle: #f8fafc;
+  --surface-subtle-strong: #eef2ff;
+  --border: #cbd5e1;
+  --border-strong: #94a3b8;
+  --text: #0f172a;
+  --text-label: #334155;
+  --text-muted: #475569;
+  --text-faint: #64748b;
+  --accent: #4f46e5;
+  --accent-strong: #4338ca;
+  --accent-soft: #e0e7ff;
+  --accent-text: #4338ca;
+  --accent-text-strong: #312e81;
+  --success: #059669;
+  --success-strong: #047857;
+  --success-soft: #d1fae5;
+  --success-border: #10b981;
+  --success-text: #065f46;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --danger-border: #fca5a5;
+  --danger-text: #b91c1c;
+  --warning-soft: #fef3c7;
+  --warning-border: #f59e0b;
+  --warning-text: #92400e;
+  --hover-bg: rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-nav: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  --modal-overlay-bg: rgba(15, 23, 42, 0.5);
+  --badge-crypto-bg: #d1fae5;
+  --badge-crypto-text: #065f46;
+  --badge-history-bg: #e0e7ff;
+  --badge-history-text: #3730a3;
+  --callout-danger-bg: #fef2f2;
+  --callout-danger-border: #fca5a5;
+  --callout-danger-text: #991b1b;
+  --callout-info-bg: #eef2ff;
+  --callout-info-border: #a5b4fc;
+  --callout-info-text: #312e81;
+  --playfair-key-bg: #e0e7ff;
+  --playfair-key-border: #4f46e5;
+  --playfair-key-text: #312e81;
+  --playfair-highlight-bg: #fef08a;
+  --playfair-highlight-border: #ca8a04;
+  --playfair-highlight-text: #713f12;
+  --tile-bottom-bg: #e0e7ff;
+  --tile-bottom-border: #6366f1;
+  --tile-bottom-text: #312e81;
+  --delta-active-bg: #e0e7ff;
+  --delta-active-border: #4f46e5;
+  --delta-active-text: #312e81;
+
+  color-scheme: light;
+}
+
 *,
 *::before,
 *::after {
@@ -35,6 +136,8 @@ body {
   margin: 0;
   min-height: 100dvh;
   background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1,
@@ -44,7 +147,8 @@ p {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
   color: inherit;
 }

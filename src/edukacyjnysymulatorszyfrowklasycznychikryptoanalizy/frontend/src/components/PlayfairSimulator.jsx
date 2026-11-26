@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import CipherHistoryInfo from './CipherHistoryInfo';
 import PlayfairMatrixVisualizer from './PlayfairMatrixVisualizer';
+import SpellcheckToggleButton from './SpellcheckToggleButton';
 import { generatePlayfairMatrix } from '../utils/playfair';
+
+const MAX_PLAYFAIR_KEY_LENGTH = 25;
 
 const MODES = {
     encrypt: {
@@ -143,8 +146,13 @@ export default function PlayfairSimulator({
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
     const [hoveredStepIdx, setHoveredStepIdx] = useState(null);
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
 
     const modeConfig = MODES[mode];
+
+    const handleKeywordChange = (value) => {
+        setKeyword(value.slice(0, MAX_PLAYFAIR_KEY_LENGTH));
+    };
 
     const handleTextChange = (newText) => {
         onTextChange(newText);
@@ -290,22 +298,33 @@ export default function PlayfairSimulator({
                                         <label className="label" htmlFor="playfair-keyword-input">
                                             Hasło / Słowo kluczowe (Keyword)
                                         </label>
-                                        <span className="shift-value">
-                                            {keyword ? keyword.toUpperCase().replaceAll('J', 'I') : 'Brak'}
-                                        </span>
+                                        <div className="field__header-actions">
+                                            <span
+                                                className={`key-limit-badge ${keyword.length >= MAX_PLAYFAIR_KEY_LENGTH ? 'key-limit-badge--limit' : ''}`}
+                                                title="Maksymalna długość hasła odpowiada 25 polom macierzy 5×5"
+                                            >
+                                                {keyword.length} / {MAX_PLAYFAIR_KEY_LENGTH} znaków
+                                            </span>
+                                            <span className="shift-value">
+                                                {keyword ? keyword.toUpperCase().replaceAll('J', 'I') : 'Brak'}
+                                            </span>
+                                        </div>
                                     </div>
                                     <input
                                         id="playfair-keyword-input"
                                         type="text"
                                         className="text-input playfair-keyword-input"
                                         value={keyword}
-                                        onChange={(e) => setKeyword(e.target.value)}
+                                        maxLength={MAX_PLAYFAIR_KEY_LENGTH}
+                                        onChange={(e) => handleKeywordChange(e.target.value)}
                                         placeholder="Wpisz hasło klucza (np. MONARCHY, KRYPTO)..."
                                         autoComplete="off"
                                         spellCheck={false}
                                     />
-                                    <span className="field-hint">
-                                        Litery hasła wypełniają siatkę od lewej do prawej. Powtórzone litery są automatycznie pomijane, a litera J jest zamieniana na I.
+                                    <span className={`field-hint ${keyword.length >= MAX_PLAYFAIR_KEY_LENGTH ? 'field-hint--limit' : ''}`}>
+                                        {keyword.length >= MAX_PLAYFAIR_KEY_LENGTH
+                                            ? `Osiągnięto limit ${MAX_PLAYFAIR_KEY_LENGTH} znaków dla klucza macierzy 5×5.`
+                                            : `Maksymalnie ${MAX_PLAYFAIR_KEY_LENGTH} znaków (siatka 5×5). Powtórzone litery są automatycznie pomijane, a litera J jest zamieniana na I.`}
                                     </span>
                                 </div>
 
@@ -334,9 +353,15 @@ export default function PlayfairSimulator({
 
                         <div className="controls">
                             <div className="field">
-                                <label className="label" htmlFor="playfair-input-text">
-                                    {modeConfig.inputLabel}
-                                </label>
+                                <div className="field__header">
+                                    <label className="label" htmlFor="playfair-input-text">
+                                        {modeConfig.inputLabel}
+                                    </label>
+                                    <SpellcheckToggleButton
+                                        enabled={spellCheckEnabled}
+                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                    />
+                                </div>
                                 <textarea
                                     id="playfair-input-text"
                                     className="text-area"
@@ -345,7 +370,7 @@ export default function PlayfairSimulator({
                                     onChange={(e) => handleTextChange(e.target.value)}
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
-                                    spellCheck={false}
+                                    spellCheck={spellCheckEnabled}
                                 />
                             </div>
 
@@ -412,6 +437,7 @@ export default function PlayfairSimulator({
                                 className="text-area text-area--result"
                                 rows={4}
                                 readOnly
+                                spellCheck={false}
                                 value={result}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas wprowadzania tekstu..."
                             />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SpellcheckToggleButton from './SpellcheckToggleButton';
 
 export default function NotesManagementPanel({
     onBack,
@@ -15,6 +16,7 @@ export default function NotesManagementPanel({
     const [newContent, setNewContent] = useState('');
     const [newNotesText, setNewNotesText] = useState('');
     const [transferNotice, setTransferNotice] = useState('');
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
 
     const filteredNotes = notes.filter((n) => {
         const query = searchQuery.toLowerCase().trim();
@@ -144,7 +146,13 @@ export default function NotesManagementPanel({
                             </div>
 
                             <div className="field">
-                                <label className="label" htmlFor="new-note-content">Szyfrogram / Dane (Ciphertext)</label>
+                                <div className="field__header">
+                                    <label className="label" htmlFor="new-note-content">Szyfrogram / Dane (Ciphertext)</label>
+                                    <SpellcheckToggleButton
+                                        enabled={spellCheckEnabled}
+                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                    />
+                                </div>
                                 <textarea
                                     id="new-note-content"
                                     className="text-area"
@@ -152,6 +160,7 @@ export default function NotesManagementPanel({
                                     value={newContent}
                                     onChange={(e) => setNewContent(e.target.value)}
                                     placeholder="Wklej tekst lub dane szyfrogramu..."
+                                    spellCheck={spellCheckEnabled}
                                     required
                                 />
                             </div>
@@ -165,6 +174,7 @@ export default function NotesManagementPanel({
                                     value={newNotesText}
                                     onChange={(e) => setNewNotesText(e.target.value)}
                                     placeholder="Opcjonalne uwagi kryptoanalityczne..."
+                                    spellCheck={false}
                                 />
                             </div>
 

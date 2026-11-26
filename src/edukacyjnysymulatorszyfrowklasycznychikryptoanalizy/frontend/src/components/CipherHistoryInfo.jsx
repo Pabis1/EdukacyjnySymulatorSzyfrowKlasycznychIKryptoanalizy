@@ -53,6 +53,33 @@ const CIPHER_HISTORIES = {
                 </p>
             ),
         },
+        sources: {
+            title: 'Źródła i literatura',
+            summary: 'Źródła antyczne oraz współczesne opracowania historyczne i kryptograficzne.',
+            items: [
+                {
+                    author: 'Gajusz Swetoniusz Trankwillus',
+                    title: 'Żywoty cezarów (De vita Caesarum), ks. I: Boski Juliusz, rozdz. 56',
+                    details: 'ok. 121 n.e. — najstarszy zachowany opis szyfru przesuwającego stosowanego przez Juliusza Cezara.',
+                    url: 'https://pl.wikipedia.org/wiki/Szyfr_Cezara',
+                },
+                {
+                    author: 'Kasjusz Dion',
+                    title: 'Historia rzymska (Historia Romana), ks. XL, rozdz. 9',
+                    details: 'III w. n.e. — relacja potwierdzająca użycie szyfru w korespondencji wojskowej Cezara.',
+                },
+                {
+                    author: 'David Kahn',
+                    title: 'Łamacze kodów. Historia tajnopisów od starożytności do Internetu (The Codebreakers)',
+                    details: 'Wydawnictwa Naukowo-Techniczne / Scribner (1996) — rozdział poświęcony kryptografii starożytnej.',
+                },
+                {
+                    author: 'Simon Singh',
+                    title: 'Księga szyfrów (The Code Book)',
+                    details: 'Wydawnictwo Albatros (2001) — omówienie szyfru Cezara i podstaw kryptoanalizy częstotliwościowej.',
+                },
+            ],
+        },
     },
     vigenere: {
         title: 'Historia i Kryptoanaliza: Szyfr Vigenère’a',
@@ -108,6 +135,38 @@ const CIPHER_HISTORIES = {
                 </p>
             ),
         },
+        sources: {
+            title: 'Źródła i literatura',
+            summary: 'Traktaty renesansowe oraz klasyczne publikacje z dziedziny kryptoanalizy.',
+            items: [
+                {
+                    author: 'Giovan Battista Bellaso',
+                    title: 'La cifra del Sig. Giovan Battista Bellaso',
+                    details: 'Wenecja (1553) — pierwsza publikacja opisująca szyfrowanie polialfabetyczne z użyciem słowa kluczowego.',
+                },
+                {
+                    author: 'Blaise de Vigenère',
+                    title: 'Traicté des chiffres, ou secrètes manières d\'escrire',
+                    details: 'Paryż (1586) — traktat popularyzujący tablice polialfabetyczne i szyfr z autokluczem.',
+                    url: 'https://pl.wikipedia.org/wiki/Szyfr_Vigen%C3%A8re%E2%80%99a',
+                },
+                {
+                    author: 'Johannes Trithemius',
+                    title: 'Polygraphiae libri sex',
+                    details: '1518 — najstarsze drukowane źródło opisujące tablicę Tabula Recta.',
+                },
+                {
+                    author: 'Friedrich Wilhelm Kasiski',
+                    title: 'Die Geheimschriften und die Dechiffrir-Kunst',
+                    details: 'Berlin (1863) — pierwsza opublikowana metoda ustalania długości klucza szyfru Vigenère’a.',
+                },
+                {
+                    author: 'William F. Friedman',
+                    title: 'The Index of Coincidence and Its Applications in Cryptography',
+                    details: 'Riverbank Publication No. 22 (1922) — wprowadzenie indeksu koincydencji (IoC).',
+                },
+            ],
+        },
     },
     playfair: {
         title: 'Historia i Kryptoanaliza: Szyfr Playfair',
@@ -158,6 +217,33 @@ const CIPHER_HISTORIES = {
                 </p>
             ),
         },
+        sources: {
+            title: 'Źródła i literatura',
+            summary: 'Opracowania historyczne dotyczące szyfru Wheatstone’a–Playfaira i epizodu PT-109.',
+            items: [
+                {
+                    author: 'Charles Wheatstone & Lyon Playfair',
+                    title: 'Dokumentacja szyfru digraficznego z siatką 5×5',
+                    details: '1854 — opis oryginalnej metody opracowanej przez Charlesa Wheatstone’a i promowanej przez Lorda Playfaira.',
+                    url: 'https://pl.wikipedia.org/wiki/Szyfr_Playfair',
+                },
+                {
+                    author: 'David Kahn',
+                    title: 'The Codebreakers: The Comprehensive History of Secret Communication from Ancient Times to the Internet',
+                    details: 'Scribner (1996) — historia zastosowań wojskowych podczas wojen burskich oraz I i II wojny światowej.',
+                },
+                {
+                    author: 'Simon Singh',
+                    title: 'Księga szyfrów (The Code Book)',
+                    details: 'Wydawnictwo Albatros (2001) — analiza własności digramowych szyfru Playfair.',
+                },
+                {
+                    author: 'Robert J. Donovan',
+                    title: 'PT 109: John F. Kennedy in World War II',
+                    details: 'McGraw-Hill (1961) — relacja z nadania meldunku ratunkowego szyfrem Playfair na Pacyfiku w 1943 r.',
+                },
+            ],
+        },
     },
 };
 
@@ -167,6 +253,7 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
         origin: true,
         vulnerability: true,
         trivia: false,
+        sources: true,
     });
 
     const data = CIPHER_HISTORIES[cipherType];
@@ -191,37 +278,19 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
             </button>
 
             {isModalOpen && (
-                <div 
-                    className="modal-overlay" 
+                <div
+                    className="modal-overlay"
                     onClick={() => setIsModalOpen(false)}
-                    style={{
-                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                        zIndex: 9999, display: 'flex', justifyContent: 'center', 
-                        alignItems: 'center', padding: '20px', backdropFilter: 'blur(4px)'
-                    }}
                 >
-                    <div 
-                        className="modal-content" 
+                    <div
+                        className="modal-content"
                         onClick={e => e.stopPropagation()}
-                        style={{
-                            backgroundColor: '#1e293b', 
-                            borderRadius: '12px', padding: '24px', 
-                            maxWidth: '700px', width: '100%', maxHeight: '90vh', 
-                            overflowY: 'auto', position: 'relative',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-                        }}
                     >
-                        <button 
-                            onClick={() => setIsModalOpen(false)} 
-                            style={{
-                                position: 'absolute', top: '16px', right: '16px', 
-                                background: 'transparent', color: '#94a3b8', 
-                                border: 'none', fontSize: '1.5rem', cursor: 'pointer',
-                                transition: 'color 0.2s'
-                            }}
-                            onMouseEnter={e => e.target.style.color = '#fff'}
-                            onMouseLeave={e => e.target.style.color = '#94a3b8'}
+                        <button
+                            type="button"
+                            className="modal-close-btn"
+                            onClick={() => setIsModalOpen(false)}
+                            aria-label="Zamknij okno tła historycznego"
                         >
                             ✕
                         </button>
@@ -297,6 +366,50 @@ export default function CipherHistoryInfo({ cipherType = 'caesar' }) {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Sekcja 4: Źródła i literatura */}
+                                {data.sources && (
+                                    <div className={`accordion-item ${openSections.sources ? 'accordion-item--open' : ''}`}>
+                                        <button
+                                            type="button"
+                                            className="accordion-trigger"
+                                            onClick={() => toggleSection('sources')}
+                                            aria-expanded={openSections.sources}
+                                        >
+                                            <div className="accordion-title-box">
+                                                <span className="accordion-title">{data.sources.title}</span>
+                                                <span className="accordion-summary">{data.sources.summary}</span>
+                                            </div>
+                                            <span className="accordion-arrow">{openSections.sources ? '▲' : '▼'}</span>
+                                        </button>
+                                        {openSections.sources && (
+                                            <div className="accordion-body">
+                                                <ol className="history-sources-list">
+                                                    {data.sources.items.map((source, idx) => (
+                                                        <li key={idx} className="history-source-item">
+                                                            <span className="history-source-author">{source.author}</span>
+                                                            {', '}
+                                                            <span className="history-source-title">{source.title}</span>
+                                                            {source.details && (
+                                                                <span className="history-source-details"> — {source.details}</span>
+                                                            )}
+                                                            {source.url && (
+                                                                <a
+                                                                    href={source.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="history-source-link"
+                                                                >
+                                                                    Źródło ↗
+                                                                </a>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </ol>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </aside>
                     </div>
