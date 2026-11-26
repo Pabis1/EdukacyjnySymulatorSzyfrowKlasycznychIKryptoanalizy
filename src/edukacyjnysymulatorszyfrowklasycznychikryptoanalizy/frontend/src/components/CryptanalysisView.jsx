@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
+import HighlightableTextarea from './HighlightableTextarea';
+import RedSpacesToggleButton from './RedSpacesToggleButton';
+import SpellcheckToggleButton from './SpellcheckToggleButton';
 
 const DEFAULT_LANGUAGES = [
     { code: 'pl', name: 'Polski', alphabet: 'AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ', alphabet_len: 32 },
@@ -164,6 +167,69 @@ function computeLocalCaesarBruteForce(text, langInfo) {
     };
 }
 
+function computeBestFrequencyMatch(analysisData) {
+    if (!analysisData?.frequencies?.length || analysisData.total_letters < 15) {
+        return { hasReliableMatch: false, bestShift: null };
+    }
+
+    const freqs = analysisData.frequencies;
+    const len = freqs.length;
+    const naturalFreqs = freqs.map((f) => f.natural_frequency || 0);
+    const naturalNorm = Math.sqrt(naturalFreqs.reduce((acc, v) => acc + v * v, 0));
+    if (naturalNorm === 0) {
+        return { hasReliableMatch: false, bestShift: null };
+    }
+
+    const similarities = [];
+    for (let shift = 0; shift < len; shift += 1) {
+        let dot = 0;
+        let shiftedSq = 0;
+        for (let i = 0; i < len; i += 1) {
+            const val = freqs[(i + shift) % len].frequency;
+            dot += val * naturalFreqs[i];
+            shiftedSq += val * val;
+        }
+        const denom = Math.sqrt(shiftedSq) * naturalNorm;
+        similarities.push({ shift, cos: denom > 0 ? dot / denom : 0 });
+    }
+
+    similarities.sort((a, b) => b.cos - a.cos);
+    const best = similarities[0];
+    const secondBest = similarities[1] || { cos: 0 };
+    const gap = best.cos - secondBest.cos;
+    const hasReliableMatch =
+        (best.cos >= 0.85 && gap >= 0.065) ||
+        (best.cos >= 0.76 && gap >= 0.11);
+
+    return {
+        hasReliableMatch,
+        bestShift: best.shift,
+    };
+}
+
+function getChartPalette(theme, isMatched) {
+    const isLight = theme === 'light';
+    return {
+        barBg: isMatched
+            ? (isLight ? 'rgba(5, 150, 105, 0.85)' : 'rgba(16, 185, 129, 0.85)')
+            : (isLight ? 'rgba(79, 70, 229, 0.85)' : 'rgba(99, 102, 241, 0.85)'),
+        barBorder: isMatched
+            ? (isLight ? '#047857' : '#34d399')
+            : (isLight ? '#4338ca' : '#818cf8'),
+        naturalBg: isLight ? 'rgba(100, 116, 139, 0.25)' : 'rgba(148, 163, 184, 0.35)',
+        naturalBorder: isLight ? 'rgba(100, 116, 139, 0.55)' : 'rgba(148, 163, 184, 0.65)',
+        legendColor: isLight ? '#0f172a' : '#f8fafc',
+        tooltipBg: isLight ? '#ffffff' : '#1e293b',
+        tooltipTitle: isLight ? '#0f172a' : '#f8fafc',
+        tooltipBody: isLight ? '#334155' : '#cbd5e1',
+        tooltipBorder: isLight ? '#cbd5e1' : '#334155',
+        xGrid: isLight ? 'rgba(15, 23, 42, 0.06)' : 'rgba(255, 255, 255, 0.05)',
+        xTicks: isLight ? '#334155' : '#cbd5e1',
+        yGrid: isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+        yTicks: isLight ? '#475569' : '#94a3b8',
+    };
+}
+
 export default function CryptanalysisView({
     onBack,
     initialCiphertext = '',
@@ -171,6 +237,7 @@ export default function CryptanalysisView({
     languages = DEFAULT_LANGUAGES,
     language = 'pl',
     onLanguageChange,
+    theme = 'dark',
 }) {
     const [cipherText, setCipherText] = useState(initialCiphertext);
     const [selectedCipherType, setSelectedCipherType] = useState(initialCipherOrigin || 'caesar');
@@ -180,6 +247,8 @@ export default function CryptanalysisView({
     const [bruteForceData, setBruteForceData] = useState(null);
     const [bruteForceLoading, setBruteForceLoading] = useState(false);
     const [chartShift, setChartShift] = useState(0);
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(false);
     const [error, setError] = useState('');
     const canvasRef = useRef(null);
     const chartInstanceRef = useRef(null);
@@ -342,6 +411,17 @@ export default function CryptanalysisView({
         return decryptWithShiftLocally(cipherText, chartShift, activeLangInfo.alphabet);
     }, [cipherText, chartShift, activeLangInfo]);
 
+    const matchAnalysis = useMemo(
+        () => computeBestFrequencyMatch(analysisData),
+        [analysisData],
+    );
+    const isMatched = Boolean(
+        !isBruteForceBlocked &&
+        analysisData &&
+        ((matchAnalysis.hasReliableMatch && chartShift === matchAnalysis.bestShift) ||
+            (!isUncertainVerdict && !isNotCaesarVerdict && rankingWinner?.shift === chartShift)),
+    );
+
     useEffect(() => {
         if (!analysisData || !canvasRef.current || shiftedFrequencies.length === 0) return;
 
@@ -354,6 +434,8 @@ export default function CryptanalysisView({
         const cipherVals = shiftedFrequencies.map((f) => f.frequency);
         const naturalVals = shiftedFrequencies.map((f) => f.natural_frequency);
 
+        const palette = getChartPalette(theme, isMatched);
+
         const ctx = canvasRef.current.getContext('2d');
         chartInstanceRef.current = new Chart(ctx, {
             type: 'bar',
@@ -365,8 +447,8 @@ export default function CryptanalysisView({
                             ? 'Szyfrogram (%)'
                             : `Szyfrogram przesunięty (Skok klucza: +${chartShift}) (%)`,
                         data: cipherVals,
-                        backgroundColor: 'rgba(99, 102, 241, 0.85)',
-                        borderColor: '#818cf8',
+                        backgroundColor: palette.barBg,
+                        borderColor: palette.barBorder,
                         borderWidth: 1.5,
                         borderRadius: 4,
                         order: 1,
@@ -374,8 +456,8 @@ export default function CryptanalysisView({
                     {
                         label: `Naturalny Język: ${activeLangInfo.name} (%) [Tło]`,
                         data: naturalVals,
-                        backgroundColor: 'rgba(148, 163, 184, 0.35)',
-                        borderColor: 'rgba(148, 163, 184, 0.65)',
+                        backgroundColor: palette.naturalBg,
+                        borderColor: palette.naturalBorder,
                         borderWidth: 1,
                         borderRadius: 4,
                         order: 2,
@@ -391,7 +473,7 @@ export default function CryptanalysisView({
                     legend: {
                         position: 'top',
                         labels: {
-                            color: '#f8fafc',
+                            color: palette.legendColor,
                             font: { size: 13, weight: '600', family: 'Inter, system-ui, sans-serif' },
                             usePointStyle: true,
                             pointStyle: 'rectRounded',
@@ -399,10 +481,10 @@ export default function CryptanalysisView({
                         },
                     },
                     tooltip: {
-                        backgroundColor: '#1e293b',
-                        titleColor: '#f8fafc',
-                        bodyColor: '#cbd5e1',
-                        borderColor: '#334155',
+                        backgroundColor: palette.tooltipBg,
+                        titleColor: palette.tooltipTitle,
+                        bodyColor: palette.tooltipBody,
+                        borderColor: palette.tooltipBorder,
                         borderWidth: 1,
                         padding: 12,
                         callbacks: {
@@ -422,17 +504,17 @@ export default function CryptanalysisView({
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#cbd5e1', font: { size: 12, weight: '600' } },
+                        grid: { color: palette.xGrid },
+                        ticks: { color: palette.xTicks, font: { size: 12, weight: '600' } },
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.08)' },
-                        ticks: { color: '#94a3b8' },
+                        grid: { color: palette.yGrid },
+                        ticks: { color: palette.yTicks },
                         title: {
                             display: true,
                             text: 'Częstotliwość występowania (%)',
-                            color: '#94a3b8',
+                            color: palette.yTicks,
                             font: { size: 12 },
                         },
                     },
@@ -446,7 +528,7 @@ export default function CryptanalysisView({
                 chartInstanceRef.current = null;
             }
         };
-    }, [analysisData, shiftedFrequencies, chartShift, activeLangInfo]);
+    }, [analysisData, shiftedFrequencies, chartShift, activeLangInfo, theme, isMatched]);
 
     const stepChartShift = (delta) => {
         const len = activeLangInfo.alphabet.length;
@@ -513,12 +595,22 @@ export default function CryptanalysisView({
                         <label className="label" htmlFor="crypto-ciphertext-input">
                             Szyfrogram do zbadania (Ciphertext)
                         </label>
-                        <span className="char-count-badge">
+                        <div className="field__header-actions">
+                            <RedSpacesToggleButton
+                                enabled={highlightSpaces}
+                                onToggle={() => setHighlightSpaces((prev) => !prev)}
+                            />
+                            <SpellcheckToggleButton
+                                enabled={spellCheckEnabled}
+                                onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                            />
+                            <span className="char-count-badge">
                             Znaków: <strong>{cipherText.length}</strong>
                         </span>
+                        </div>
                     </div>
 
-                    <textarea
+                    <HighlightableTextarea
                         id="crypto-ciphertext-input"
                         className="text-area crypto-textarea"
                         rows={4}
@@ -526,7 +618,8 @@ export default function CryptanalysisView({
                         onChange={(e) => setCipherText(e.target.value)}
                         placeholder="Wklej tutaj zaszyfrowany tekst..."
                         autoComplete="off"
-                        spellCheck={false}
+                        spellCheck={spellCheckEnabled}
+                        highlightSpaces={highlightSpaces}
                     />
 
                     {/* Wirtualna klawiatura dla języków niepolskich również w Kryptoanalizie */}
@@ -534,7 +627,7 @@ export default function CryptanalysisView({
                         <div className="virtual-keyboard">
                             <div className="virtual-keyboard__header">
                                 <div className="virtual-keyboard__title">
-                                    <span>⌨️ Wirtualna klawiatura: <strong>{activeLangInfo.name}</strong></span>
+                                    <span>Wirtualna klawiatura: <strong>{activeLangInfo.name}</strong></span>
                                 </div>
                                 <div className="virtual-keyboard__actions">
                                     <button
@@ -583,7 +676,7 @@ export default function CryptanalysisView({
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => setCipherText((prev) => prev.slice(0, -1))}
                                     >
-                                        ⌫ Usuń
+                                        Usuń
                                     </button>
                                 </div>
                             )}
@@ -598,7 +691,7 @@ export default function CryptanalysisView({
                         onClick={handleAnalyze}
                         style={{ width: 'auto' }}
                     >
-                        📊 Analizuj Częstotliwość i Wykres
+                        Analizuj Częstotliwość i Wykres
                     </button>
                     <button
                         type="button"
@@ -612,10 +705,10 @@ export default function CryptanalysisView({
                         }
                     >
                         {isBruteForceBlocked
-                            ? `🔒 Brute Force niedostępny (${selectedCipherType === 'vigenere' ? 'Vigenère' : 'Playfair'})`
+                            ? `Brute Force niedostępny (${selectedCipherType === 'vigenere' ? 'Vigenère' : 'Playfair'})`
                             : bruteForceLoading
                             ? 'Ocenianie przez NLTK...'
-                            : '⚡ Złam (Cezar - Brute Force + NLTK)'}
+                            : 'Złam (Cezar - Brute Force + NLTK)'}
                     </button>
                 </div>
 
@@ -716,9 +809,9 @@ export default function CryptanalysisView({
                                                     className={`brute-force-row brute-force-row--not-caesar ${isTopWinner ? 'brute-force-row--not-caesar-best' : ''}`}
                                                 >
                                                     <td className="brute-force-cell-key">
-                                                        <span className="key-pill key-pill--not-caesar">🚫 Nie Cezar</span>
+                                                        <span className="key-pill key-pill--not-caesar">Nie Cezar</span>
                                                         {isTopWinner && (
-                                                            <span className="nltk-best-tag nltk-best-tag--danger">🏆 #1 NLTK</span>
+                                                            <span className="nltk-best-tag nltk-best-tag--danger">#1 NLTK</span>
                                                         )}
                                                     </td>
                                                     <td>
@@ -740,7 +833,7 @@ export default function CryptanalysisView({
                                                 <td className="brute-force-cell-key">
                                                     <span className="key-pill">+{cand.shift}</span>
                                                     {isTopWinner && (
-                                                        <span className="nltk-best-tag">🏆 #1 NLTK</span>
+                                                        <span className="nltk-best-tag">#1 NLTK</span>
                                                     )}
                                                 </td>
                                                 {!bruteForceData.isLocalFallback && (
@@ -795,19 +888,26 @@ export default function CryptanalysisView({
                             </div>
                         </div>
 
-                        <div className="chart-wrapper">
+                        <div className={`chart-wrapper ${isMatched ? 'chart-wrapper--matched' : ''}`}>
                             <div className="chart-header">
                                 <h3 className="chart-title">Wykres Częstotliwości Liter vs Język Naturalny</h3>
-                                <span className="chart-legend-badge">
-                                    Fiolet = Szyfrogram | Szary = {activeLangInfo.name} (Tło)
+                                <span className={`chart-legend-badge ${isMatched ? 'chart-legend-badge--matched' : ''}`}>
+                                    {isMatched ? `Zielony = Poprawne dopasowanie! | Szary = ${activeLangInfo.name} (Tło)` : `Fiolet = Szyfrogram | Szary = ${activeLangInfo.name} (Tło)`}
                                 </span>
+                                {isMatched && (
+                                    <span className="match-status-pill" role="status">
+                                        {chartShift === 0
+                                            ? '✓ Znaleziono poprawne dopasowanie (tekst jawny / klucz 0)'
+                                            : `✓ Znaleziono poprawne dopasowanie! Klucz Cezara: +${chartShift}`}
+                                    </span>
+                                )}
                             </div>
 
                             {/* Kontroler skokowego przesuwania wykresu */}
                             <div className="chart-shift-bar">
                                 <div className="chart-shift-bar__top">
                                     <div className="chart-shift-status">
-                                        <span className="shift-indicator-pill">
+                                        <span className={`shift-indicator-pill ${isMatched ? 'delta-badge--matched' : ''}`}>
                                             Obecny skok wykresu: <strong>{chartShift === 0 ? '0 (oryginał)' : `+${chartShift}`}</strong>
                                         </span>
                                         <span className="metadata-badge">
@@ -845,7 +945,7 @@ export default function CryptanalysisView({
                                                 onClick={handleAutoFitChart}
                                                 style={{ width: 'auto', minHeight: '36px' }}
                                             >
-                                                🎯 Auto-dopasuj (χ²)
+                                                Auto-dopasuj (χ²)
                                             </button>
                                         )}
                                     </div>
@@ -877,7 +977,7 @@ export default function CryptanalysisView({
                                 )}
                             </div>
 
-                            <div className="chart-canvas-container">
+                            <div className={`chart-canvas-container ${isMatched ? 'chart-canvas-container--matched' : ''}`}>
                                 <canvas ref={canvasRef} aria-label="Wykres słupkowy częstotliwości liter" />
                             </div>
                         </div>

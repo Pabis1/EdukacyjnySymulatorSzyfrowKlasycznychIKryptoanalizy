@@ -3,6 +3,11 @@ import './App.css';
 import CaesarShiftVisualizer from './components/CaesarShiftVisualizer';
 import CipherHistoryInfo from './components/CipherHistoryInfo';
 import CryptanalysisView from './components/CryptanalysisView';
+import HighlightableTextarea from './components/HighlightableTextarea';
+import RedSpacesToggleButton from './components/RedSpacesToggleButton';
+import SpellcheckToggleButton from './components/SpellcheckToggleButton';
+
+const MAX_PLAYFAIR_KEY_LENGTH = 25;
 
 const FALLBACK_LANGUAGES = [
     { code: 'pl', name: 'Polski', alphabet: 'AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ', alphabet_len: 32 },
@@ -19,7 +24,7 @@ const CIPHER_MODULES = [
         category: 'Kryptografia Klasyczna',
         badge: 'Podstawowy',
         description: 'Klasyczny szyfr podstawieniowy przesuwający litery o stałą wartość klucza. Idealny punkt startowy.',
-        icon: '🏛️',
+        icon: '',
         available: true,
     },
     {
@@ -28,7 +33,7 @@ const CIPHER_MODULES = [
         category: 'Kryptografia Klasyczna',
         badge: 'Średniozaawansowany',
         description: 'Polialfabetyczny szyfr oparty na powtarzanym słowie kluczowym, który zrewolucjonizował renesansową kryptografię.',
-        icon: '🗝️',
+        icon: '',
         available: true,
     },
     {
@@ -37,7 +42,7 @@ const CIPHER_MODULES = [
         category: 'Kryptografia Klasyczna',
         badge: 'Średniozaawansowany',
         description: 'Pierwszy w historii praktyczny szyfr digraficzny. Szyfruje pary liter wykorzystując specjalną macierz 5x5 wygenerowaną na podstawie słowa kluczowego.',
-        icon: '🧩',
+        icon: '',
         available: true,
     },
     {
@@ -46,7 +51,7 @@ const CIPHER_MODULES = [
         category: 'Kryptoanaliza & NLTK',
         badge: 'Wykresy & Analiza',
         description: 'Wizualizacja statystyk liter ze skokowym przesuwaniem wykresu, badanie IoC oraz łamanie Brute Force z modelem NLTK.',
-        icon: '📊',
+        icon: '',
         available: true,
     },
 ];
@@ -125,7 +130,7 @@ function VirtualKeyboard({ languageObj, onInsert, onBackspace, targetLabel = 'Po
         <div className="virtual-keyboard" aria-label={`Wirtualna klawiatura: ${languageObj.name}`}>
             <div className="virtual-keyboard__header">
                 <div className="virtual-keyboard__title">
-                    <span>⌨️ Wirtualna klawiatura: <strong>{languageObj.name}</strong></span>
+                    <span>Wirtualna klawiatura: <strong>{languageObj.name}</strong></span>
                     <span className="vk-target-pill">Cel: {targetLabel}</span>
                 </div>
                 <div className="virtual-keyboard__actions">
@@ -178,7 +183,7 @@ function VirtualKeyboard({ languageObj, onInsert, onBackspace, targetLabel = 'Po
                         onClick={onBackspace}
                         title="Usuń ostatni znak"
                     >
-                        ⌫ Usuń
+                        Usuń
                     </button>
                 </div>
             )}
@@ -187,7 +192,7 @@ function VirtualKeyboard({ languageObj, onInsert, onBackspace, targetLabel = 'Po
 }
 
 // Wyświetlacz wyniku podświetlający na czerwono znaki nieprzesunięte (spacje, interpunkcję, cyfry)
-function HighlightedResultBox({ result, cipherPackage, placeholder }) {
+function HighlightedResultBox({ result, cipherPackage, placeholder, highlightSpaces = true }) {
     if (!result) {
         return (
             <div className="text-area text-area--result result-rich-box result-rich-box--empty" role="textbox" aria-readonly="true">
@@ -207,7 +212,9 @@ function HighlightedResultBox({ result, cipherPackage, placeholder }) {
         );
     }
 
-    const hasUnmodified = steps.some((s) => !s.operation_details.is_modified);
+    const hasUnmodified = steps.some(
+        (s) => !s.operation_details.is_modified && (highlightSpaces || s.output_char !== ' '),
+    );
 
     return (
         <div className="result-rich-wrapper">
@@ -225,6 +232,9 @@ function HighlightedResultBox({ result, cipherPackage, placeholder }) {
                     }
 
                     if (ch === ' ') {
+                        if (!highlightSpaces) {
+                            return <span key={idx}>{' '}</span>;
+                        }
                         return (
                             <span
                                 key={idx}
@@ -393,6 +403,8 @@ function CaesarSimulator({
     const [cipherPackage, setCipherPackage] = useState(null);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(true);
 
     const activeLang = languages.find((l) => l.code === language) || FALLBACK_LANGUAGES[0];
     const maxShift = Math.max(1, activeLang.alphabet_len - 1);
@@ -533,10 +545,24 @@ function CaesarSimulator({
 
                         <div className="controls">
                             <div className="field">
-                                <label className="label" htmlFor="caesar-input-text">
-                                    {modeConfig.inputLabel}
-                                </label>
-                                <textarea
+                                <div className="field__header">
+                                    <label className="label" htmlFor="caesar-input-text">
+                                        {modeConfig.inputLabel}
+                                    </label>
+                                    <div className="field__header-actions">
+                                        {mode === 'decrypt' && (
+                                            <RedSpacesToggleButton
+                                                enabled={highlightSpaces}
+                                                onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                            />
+                                        )}
+                                        <SpellcheckToggleButton
+                                            enabled={spellCheckEnabled}
+                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                        />
+                                    </div>
+                                </div>
+                                <HighlightableTextarea
                                     id="caesar-input-text"
                                     className="text-area"
                                     rows={3}
@@ -598,8 +624,12 @@ function CaesarSimulator({
                                             className="link-button link-button--analyze"
                                             onClick={() => onGoToAnalysis(mode === 'encrypt' ? result : text, 'caesar')}
                                         >
-                                            📊 Analiza
+                                            Analiza
                                         </button>
+                                        <RedSpacesToggleButton
+                                            enabled={highlightSpaces}
+                                            onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                        />
                                         <button
                                             type="button"
                                             className="link-button"
@@ -622,6 +652,7 @@ function CaesarSimulator({
                                 result={result}
                                 cipherPackage={cipherPackage}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
+                                highlightSpaces={highlightSpaces}
                             />
 
                             {cipherPackage?.metadata && (
@@ -675,6 +706,8 @@ function VigenereSimulator({
     const [cipherPackage, setCipherPackage] = useState(null);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(true);
 
     const activeLang = languages.find((l) => l.code === language) || FALLBACK_LANGUAGES[0];
     const modeConfig = MODES[mode];
@@ -834,10 +867,24 @@ function VigenereSimulator({
 
                         <div className="controls">
                             <div className="field">
-                                <label className="label" htmlFor="vigenere-input-text">
-                                    {modeConfig.inputLabel}
-                                </label>
-                                <textarea
+                                    <div className="field__header">
+                                    <label className="label" htmlFor="vigenere-input-text">
+                                        {modeConfig.inputLabel}
+                                    </label>
+                                    <div className="field__header-actions">
+                                        {mode === 'decrypt' && (
+                                            <RedSpacesToggleButton
+                                                enabled={highlightSpaces}
+                                                onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                            />
+                                        )}
+                                        <SpellcheckToggleButton
+                                            enabled={spellCheckEnabled}
+                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                        />
+                                    </div>
+                                </div>
+                                <HighlightableTextarea
                                     id="vigenere-input-text"
                                     className="text-area"
                                     rows={3}
@@ -901,8 +948,12 @@ function VigenereSimulator({
                                             className="link-button link-button--analyze"
                                             onClick={() => onGoToAnalysis(mode === 'encrypt' ? result : text, 'vigenere')}
                                         >
-                                            📊 Analiza
+                                            Analiza
                                         </button>
+                                        <RedSpacesToggleButton
+                                            enabled={highlightSpaces}
+                                            onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                        />
                                         <button
                                             type="button"
                                             className="link-button"
@@ -925,6 +976,7 @@ function VigenereSimulator({
                                 result={result}
                                 cipherPackage={cipherPackage}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
+                                highlightSpaces={highlightSpaces}
                             />
 
                             {cipherPackage?.metadata && (
@@ -985,6 +1037,8 @@ function PlayfairSimulator({
     const [activeStepIndex, setActiveStepIndex] = useState(null);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
+    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(true);
 
     const modeConfig = MODES[mode];
 
@@ -1133,10 +1187,24 @@ function PlayfairSimulator({
 
                         <div className="controls">
                             <div className="field">
-                                <label className="label" htmlFor="playfair-input-text">
-                                    {modeConfig.inputLabel}
-                                </label>
-                                <textarea
+                                <div className="field__header">
+                                    <label className="label" htmlFor="playfair-input-text">
+                                        {modeConfig.inputLabel}
+                                    </label>
+                                    <div className="field__header-actions">
+                                        {mode === 'decrypt' && (
+                                            <RedSpacesToggleButton
+                                                enabled={highlightSpaces}
+                                                onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                            />
+                                        )}
+                                        <SpellcheckToggleButton
+                                            enabled={spellCheckEnabled}
+                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                        />
+                                    </div>
+                                </div>
+                                <HighlightableTextarea
                                     id="playfair-input-text"
                                     className="text-area"
                                     rows={3}
@@ -1157,22 +1225,33 @@ function PlayfairSimulator({
                                     <label className="label" htmlFor="playfair-keyword">
                                         Słowo kluczowe macierzy (Keyword)
                                     </label>
-                                    <span className="shift-value">
-                                        {keyword ? keyword.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '') || 'PUSTY' : 'DOMYŚLNY'}
-                                    </span>
+                                    <div className="field__header-actions">
+                                        <span
+                                            className={`key-limit-badge ${keyword.length >= MAX_PLAYFAIR_KEY_LENGTH ? 'key-limit-badge--limit' : ''}`}
+                                            title="Maksymalna długość hasła odpowiada 25 polom macierzy 5×5"
+                                        >
+                                            {keyword.length} / {MAX_PLAYFAIR_KEY_LENGTH} znaków
+                                        </span>
+                                        <span className="shift-value">
+                                            {keyword ? keyword.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '') || 'PUSTY' : 'DOMYŚLNY'}
+                                        </span>
+                                    </div>
                                 </div>
                                 <input
                                     id="playfair-keyword"
+                                    maxLength={MAX_PLAYFAIR_KEY_LENGTH}
                                     type="text"
                                     className="text-input"
                                     value={keyword}
-                                    onChange={(e) => setKeyword(e.target.value)}
+                                    onChange={(e) => setKeyword(e.target.value.slice(0, MAX_PLAYFAIR_KEY_LENGTH))}
                                     placeholder="Wpisz klucz budujący siatkę 5x5 (np. ENIGMA)..."
                                     autoComplete="off"
                                     spellCheck={false}
                                 />
                                 <span className="field-hint">
-                                    Powtarzające się litery w parze są automatycznie rozdzielane znakiem X (lub Q dla XX).
+                                    {keyword.length >= MAX_PLAYFAIR_KEY_LENGTH
+                                        ? `Osiągnięto limit ${MAX_PLAYFAIR_KEY_LENGTH} znaków dla klucza macierzy 5×5.`
+                                        : `Maksymalnie ${MAX_PLAYFAIR_KEY_LENGTH} znaków (siatka 5×5). Powtarzające się litery w parze są automatycznie rozdzielane znakiem X (lub Q dla XX).`}
                                 </span>
                             </div>
 
@@ -1195,7 +1274,7 @@ function PlayfairSimulator({
                                             className="link-button link-button--analyze"
                                             onClick={() => onGoToAnalysis(mode === 'encrypt' ? result : text, 'playfair', 'en')}
                                         >
-                                            📊 Analiza
+                                            Analiza
                                         </button>
                                         <button
                                             type="button"
@@ -1329,6 +1408,29 @@ export default function App() {
     const [playfairText, setPlayfairText] = useState('');
     const [sharedCiphertext, setSharedCiphertext] = useState('');
     const [sharedCipherOrigin, setSharedCipherOrigin] = useState('caesar');
+    const [theme, setTheme] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+        }
+        return 'dark';
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        try {
+            window.localStorage.setItem('theme', theme);
+        } catch {
+            // Ignoruj błąd zapisu w trybie prywatnym
+        }
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#0f172a');
+        }
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    };
 
     useEffect(() => {
         fetch('/api/v1/languages')
@@ -1367,7 +1469,7 @@ export default function App() {
                     className="edu-logo"
                     onClick={() => setCurrentView('home')}
                 >
-                    <span className="logo-icon">🔐</span>
+                    <span className="logo-icon"></span>
                     <span className="logo-text">Symulator <strong>Edukacyjny</strong></span>
                     <span className="logo-badge">EDU</span>
                 </button>
@@ -1406,6 +1508,16 @@ export default function App() {
                         onClick={() => setCurrentView('cryptanalysis')}
                     >
                         Kryptoanaliza
+                    </button>
+                    <button
+                        type="button"
+                        className="theme-toggle-btn"
+                        onClick={toggleTheme}
+                        aria-pressed={theme === 'light'}
+                        title={theme === 'light' ? 'Przełącz na motyw ciemny' : 'Przełącz na motyw jasny'}
+                    >
+
+                        <span>{theme === 'light' ? 'Motyw ciemny' : 'Motyw jasny'}</span>
                     </button>
                 </div>
             </nav>
@@ -1463,6 +1575,7 @@ export default function App() {
                     languages={languages}
                     language={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
+                    theme={theme}
                 />
             )}
 
@@ -1476,6 +1589,7 @@ export default function App() {
                     languages={languages}
                     language={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
+                    theme={theme}
                 />
             )}
 
@@ -1489,6 +1603,7 @@ export default function App() {
                     languages={languages}
                     language={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
+                    theme={theme}
                 />
             )}
 
@@ -1500,6 +1615,7 @@ export default function App() {
                     languages={languages}
                     language={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
+                    theme={theme}
                 />
             )}
 
