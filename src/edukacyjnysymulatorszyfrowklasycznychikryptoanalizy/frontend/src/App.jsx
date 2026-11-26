@@ -5,9 +5,14 @@ import CipherHistoryInfo from './components/CipherHistoryInfo';
 import CryptanalysisView from './components/CryptanalysisView';
 import HighlightableTextarea from './components/HighlightableTextarea';
 import RedSpacesToggleButton from './components/RedSpacesToggleButton';
-import SpellcheckToggleButton from './components/SpellcheckToggleButton';
-
-const MAX_PLAYFAIR_KEY_LENGTH = 25;
+import {
+    DEFAULT_PLAYFAIR_KEYWORD,
+    MAX_PLAYFAIR_KEY_LENGTH,
+    buildLocalPlayfairMatrix,
+    formatCaesarShift,
+    getEffectivePlayfairKeyword,
+    normalizePlayfairKeyword,
+} from './utils/cryptoUtils';
 
 const FALLBACK_LANGUAGES = [
     { code: 'pl', name: 'Polski', alphabet: 'AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ', alphabet_len: 32 },
@@ -70,13 +75,6 @@ const MODES = {
         outputLabel: 'Tekst jawny (Plaintext)',
     },
 };
-
-// Przesunięcie ze znakiem faktycznego kierunku, zgodnie z formułą backendu:
-// szyfrowanie dodaje klucz, deszyfrowanie go odejmuje (np. klucz -3 przy deszyfrowaniu daje +3).
-function formatCaesarShift(shift, mode) {
-    const signed = mode === 'encrypt' ? Number(shift) : -Number(shift);
-    return signed < 0 ? `-${Math.abs(signed)}` : `+${signed}`;
-}
 
 function CipherLanguageBar({ languages, selectedLanguage, onSelect, playfairFixed = false }) {
     if (playfairFixed) {
@@ -257,6 +255,7 @@ function HighlightedResultBox({ result, cipherPackage, placeholder, highlightSpa
                     );
                 })}
             </div>
+
             {hasUnmodified && (
                 <div className="unmodified-legend">
                     <span className="unmodified-legend__dot" />
@@ -403,7 +402,6 @@ function CaesarSimulator({
     const [cipherPackage, setCipherPackage] = useState(null);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
-    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
     const [highlightSpaces, setHighlightSpaces] = useState(true);
 
     const activeLang = languages.find((l) => l.code === language) || FALLBACK_LANGUAGES[0];
@@ -438,7 +436,6 @@ function CaesarSimulator({
         const controller = new AbortController();
         const timer = setTimeout(async () => {
             setError('');
-
             try {
                 const response = await fetch(`/api/v1/caesar/${mode}`, {
                     method: 'POST',
@@ -549,18 +546,14 @@ function CaesarSimulator({
                                     <label className="label" htmlFor="caesar-input-text">
                                         {modeConfig.inputLabel}
                                     </label>
-                                    <div className="field__header-actions">
-                                        {mode === 'decrypt' && (
+                                    {mode === 'decrypt' && (
+                                        <div className="field__header-actions">
                                             <RedSpacesToggleButton
                                                 enabled={highlightSpaces}
                                                 onToggle={() => setHighlightSpaces((prev) => !prev)}
                                             />
-                                        )}
-                                        <SpellcheckToggleButton
-                                            enabled={spellCheckEnabled}
-                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
-                                        />
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <HighlightableTextarea
                                     id="caesar-input-text"
@@ -571,7 +564,9 @@ function CaesarSimulator({
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
                                     spellCheck={false}
+                                    highlightSpaces={mode === 'decrypt' && highlightSpaces}
                                 />
+
                                 <VirtualKeyboard
                                     languageObj={activeLang}
                                     targetLabel={modeConfig.inputLabel}
@@ -706,7 +701,6 @@ function VigenereSimulator({
     const [cipherPackage, setCipherPackage] = useState(null);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
-    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
     const [highlightSpaces, setHighlightSpaces] = useState(true);
 
     const activeLang = languages.find((l) => l.code === language) || FALLBACK_LANGUAGES[0];
@@ -744,7 +738,6 @@ function VigenereSimulator({
         const controller = new AbortController();
         const timer = setTimeout(async () => {
             setError('');
-
             try {
                 const response = await fetch(`/api/v1/vigenere/${mode}`, {
                     method: 'POST',
@@ -867,22 +860,18 @@ function VigenereSimulator({
 
                         <div className="controls">
                             <div className="field">
-                                    <div className="field__header">
+                                <div className="field__header">
                                     <label className="label" htmlFor="vigenere-input-text">
                                         {modeConfig.inputLabel}
                                     </label>
-                                    <div className="field__header-actions">
-                                        {mode === 'decrypt' && (
+                                    {mode === 'decrypt' && (
+                                        <div className="field__header-actions">
                                             <RedSpacesToggleButton
                                                 enabled={highlightSpaces}
                                                 onToggle={() => setHighlightSpaces((prev) => !prev)}
                                             />
-                                        )}
-                                        <SpellcheckToggleButton
-                                            enabled={spellCheckEnabled}
-                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
-                                        />
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <HighlightableTextarea
                                     id="vigenere-input-text"
@@ -894,6 +883,7 @@ function VigenereSimulator({
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
                                     spellCheck={false}
+                                    highlightSpaces={mode === 'decrypt' && highlightSpaces}
                                 />
                             </div>
 
@@ -1005,20 +995,6 @@ function VigenereSimulator({
     );
 }
 
-function buildLocalPlayfairMatrix(keyword = '') {
-    const clean = keyword.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '');
-    const alpha = 'ABCDEFGHIKLMNOPQRSTUVWXYZ';
-    const seen = new Set();
-    const out = [];
-    for (const ch of clean + alpha) {
-        if (!seen.has(ch) && alpha.includes(ch)) {
-            seen.add(ch);
-            out.push(ch);
-        }
-    }
-    return out;
-}
-
 // Moduł 3: Szyfr Playfair
 function PlayfairSimulator({
     onBack,
@@ -1031,16 +1007,18 @@ function PlayfairSimulator({
     onLanguageChange,
 }) {
     const [mode, setMode] = useState('encrypt');
-    const [keyword, setKeyword] = useState('ENIGMA');
+    const [keyword, setKeyword] = useState(DEFAULT_PLAYFAIR_KEYWORD);
     const [result, setResult] = useState('');
     const [cipherPackage, setCipherPackage] = useState(null);
     const [activeStepIndex, setActiveStepIndex] = useState(null);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
-    const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
     const [highlightSpaces, setHighlightSpaces] = useState(true);
 
     const modeConfig = MODES[mode];
+    const normalizedKeyword = normalizePlayfairKeyword(keyword);
+    const effectiveKeyword = getEffectivePlayfairKeyword(keyword);
+    const isDefaultKeyword = normalizedKeyword.length === 0;
 
     const handleTextChange = (newText) => {
         onTextChange(newText);
@@ -1063,7 +1041,6 @@ function PlayfairSimulator({
         const controller = new AbortController();
         const timer = setTimeout(async () => {
             setError('');
-
             try {
                 const response = await fetch(`/api/v1/playfair/${mode}`, {
                     method: 'POST',
@@ -1072,7 +1049,7 @@ function PlayfairSimulator({
                     },
                     body: JSON.stringify({
                         text: text,
-                        keyword: keyword,
+                        keyword: effectiveKeyword,
                     }),
                     signal: controller.signal,
                 });
@@ -1107,7 +1084,7 @@ function PlayfairSimulator({
             clearTimeout(timer);
             controller.abort();
         };
-    }, [text, keyword, mode, onCiphertextChange]);
+    }, [text, effectiveKeyword, mode, onCiphertextChange]);
 
     const handleUseResult = () => {
         onTextChange(result);
@@ -1132,7 +1109,7 @@ function PlayfairSimulator({
         )
     );
 
-    const matrix1D = cipherPackage?.metadata?.matrix_1d || buildLocalPlayfairMatrix(keyword);
+    const matrix1D = cipherPackage?.metadata?.matrix_1d || buildLocalPlayfairMatrix(effectiveKeyword);
     const activeStep = activeStepIndex !== null && cipherPackage?.steps?.[activeStepIndex]
         ? cipherPackage.steps[activeStepIndex]
         : null;
@@ -1191,18 +1168,14 @@ function PlayfairSimulator({
                                     <label className="label" htmlFor="playfair-input-text">
                                         {modeConfig.inputLabel}
                                     </label>
-                                    <div className="field__header-actions">
-                                        {mode === 'decrypt' && (
+                                    {mode === 'decrypt' && (
+                                        <div className="field__header-actions">
                                             <RedSpacesToggleButton
                                                 enabled={highlightSpaces}
                                                 onToggle={() => setHighlightSpaces((prev) => !prev)}
                                             />
-                                        )}
-                                        <SpellcheckToggleButton
-                                            enabled={spellCheckEnabled}
-                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
-                                        />
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <HighlightableTextarea
                                     id="playfair-input-text"
@@ -1217,6 +1190,7 @@ function PlayfairSimulator({
                                     }
                                     autoComplete="off"
                                     spellCheck={false}
+                                    highlightSpaces={mode === 'decrypt' && highlightSpaces}
                                 />
                             </div>
 
@@ -1232,8 +1206,15 @@ function PlayfairSimulator({
                                         >
                                             {keyword.length} / {MAX_PLAYFAIR_KEY_LENGTH} znaków
                                         </span>
-                                        <span className="shift-value">
-                                            {keyword ? keyword.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '') || 'PUSTY' : 'DOMYŚLNY'}
+                                        <span
+                                            className="shift-value"
+                                            title={
+                                                isDefaultKeyword
+                                                    ? `Pole puste — używany jest domyślny klucz ${DEFAULT_PLAYFAIR_KEYWORD}`
+                                                    : `Znormalizowany klucz siatki: ${effectiveKeyword}`
+                                            }
+                                        >
+                                            {isDefaultKeyword ? `DOMYŚLNY: ${DEFAULT_PLAYFAIR_KEYWORD}` : effectiveKeyword}
                                         </span>
                                     </div>
                                 </div>
@@ -1244,14 +1225,14 @@ function PlayfairSimulator({
                                     className="text-input"
                                     value={keyword}
                                     onChange={(e) => setKeyword(e.target.value.slice(0, MAX_PLAYFAIR_KEY_LENGTH))}
-                                    placeholder="Wpisz klucz budujący siatkę 5x5 (np. ENIGMA)..."
+                                    placeholder={`Domyślnie: ${DEFAULT_PLAYFAIR_KEYWORD} (wpisz własny klucz siatki 5x5)...`}
                                     autoComplete="off"
                                     spellCheck={false}
                                 />
                                 <span className="field-hint">
                                     {keyword.length >= MAX_PLAYFAIR_KEY_LENGTH
                                         ? `Osiągnięto limit ${MAX_PLAYFAIR_KEY_LENGTH} znaków dla klucza macierzy 5×5.`
-                                        : `Maksymalnie ${MAX_PLAYFAIR_KEY_LENGTH} znaków (siatka 5×5). Powtarzające się litery w parze są automatycznie rozdzielane znakiem X (lub Q dla XX).`}
+                                        : `Gdy pole jest puste, automatycznie używany jest domyślny klucz ${DEFAULT_PLAYFAIR_KEYWORD}. Powtarzające się litery w parze są rozdzielane znakiem X (lub Q dla XX).`}
                                 </span>
                             </div>
 
@@ -1316,7 +1297,11 @@ function PlayfairSimulator({
                                         Szyfr: <strong>Playfair (5×5)</strong>
                                     </span>
                                     <span className="metadata-badge">
-                                        Klucz siatki: <strong>{cipherPackage.metadata.keyword || '(alfabetyczny)'}</strong>
+                                        Klucz siatki:{' '}
+                                        <strong>
+                                            {cipherPackage.metadata.keyword || DEFAULT_PLAYFAIR_KEYWORD}
+                                            {isDefaultKeyword ? ' (domyślny)' : ''}
+                                        </strong>
                                     </span>
                                     <span className="metadata-badge">
                                         Liczba par: <strong>{cipherPackage.steps.length}</strong>
@@ -1338,6 +1323,9 @@ function PlayfairSimulator({
                             </div>
                             <div className="shift-visualizer__controls">
                                 <span className="shift-indicator-pill">
+                                    Klucz siatki: <strong>{effectiveKeyword}{isDefaultKeyword ? ' (domyślny)' : ''}</strong>
+                                </span>
+                                <span className="shift-indicator-pill">
                                     Zasada: <strong>I = J (25 komórek)</strong>
                                 </span>
                             </div>
@@ -1348,6 +1336,7 @@ function PlayfairSimulator({
                                 {matrix1D.map((char, idx) => {
                                     const r = Math.floor(idx / 5);
                                     const c = idx % 5;
+
                                     const isInput1 = activeStep && activeStep.operation_details.pos1[0] === r && activeStep.operation_details.pos1[1] === c;
                                     const isInput2 = activeStep && activeStep.operation_details.pos2[0] === r && activeStep.operation_details.pos2[1] === c;
                                     const isOutputChar = activeStep && (activeStep.output_char[0] === char || activeStep.output_char[1] === char);
@@ -1462,7 +1451,6 @@ export default function App() {
 
     return (
         <div className="app">
-            {/* Naprawiony, jednowierszowy pasek nawigacyjny */}
             <nav className="edu-navbar" aria-label="Nawigacja główna">
                 <button
                     type="button"
@@ -1516,13 +1504,11 @@ export default function App() {
                         aria-pressed={theme === 'light'}
                         title={theme === 'light' ? 'Przełącz na motyw ciemny' : 'Przełącz na motyw jasny'}
                     >
-
                         <span>{theme === 'light' ? 'Motyw ciemny' : 'Motyw jasny'}</span>
                     </button>
                 </div>
             </nav>
 
-            {/* Widok: Strona Główna / Dashboard */}
             {currentView === 'home' && (
                 <main className="dashboard-container">
                     <div className="dashboard-hero">
