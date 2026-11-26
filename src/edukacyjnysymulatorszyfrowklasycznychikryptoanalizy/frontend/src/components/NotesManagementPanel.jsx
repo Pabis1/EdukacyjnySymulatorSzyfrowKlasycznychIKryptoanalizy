@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import HighlightableTextarea from './HighlightableTextarea';
+import RedSpacesToggleButton from './RedSpacesToggleButton';
 import SpellcheckToggleButton from './SpellcheckToggleButton';
 
 export default function NotesManagementPanel({
@@ -17,6 +19,7 @@ export default function NotesManagementPanel({
     const [newNotesText, setNewNotesText] = useState('');
     const [transferNotice, setTransferNotice] = useState('');
     const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(false);
 
     const filteredNotes = notes.filter((n) => {
         const query = searchQuery.toLowerCase().trim();
@@ -148,12 +151,18 @@ export default function NotesManagementPanel({
                             <div className="field">
                                 <div className="field__header">
                                     <label className="label" htmlFor="new-note-content">Szyfrogram / Dane (Ciphertext)</label>
-                                    <SpellcheckToggleButton
-                                        enabled={spellCheckEnabled}
-                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
-                                    />
+                                    <div className="field__header-actions">
+                                        <RedSpacesToggleButton
+                                            enabled={highlightSpaces}
+                                            onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                        />
+                                        <SpellcheckToggleButton
+                                            enabled={spellCheckEnabled}
+                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                        />
+                                    </div>
                                 </div>
-                                <textarea
+                                <HighlightableTextarea
                                     id="new-note-content"
                                     className="text-area"
                                     rows={3}
@@ -161,6 +170,7 @@ export default function NotesManagementPanel({
                                     onChange={(e) => setNewContent(e.target.value)}
                                     placeholder="Wklej tekst lub dane szyfrogramu..."
                                     spellCheck={spellCheckEnabled}
+                                    highlightSpaces={highlightSpaces}
                                     required
                                 />
                             </div>
@@ -260,12 +270,30 @@ export default function NotesManagementPanel({
                                     <label className="label">
                                         Aktualnie wybrana notatka / Dane szyfrogramu:
                                     </label>
-                                    <span className="char-count-badge">
-                                        Długość: <strong>{selectedNote.content.length}</strong> znaków
-                                    </span>
+                                    <div className="field__header-actions">
+                                        <RedSpacesToggleButton
+                                            enabled={highlightSpaces}
+                                            onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                        />
+                                        <span className="char-count-badge">
+                                            Długość: <strong>{selectedNote.content.length}</strong> znaków
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="note-content-box">
-                                    <pre className="note-content-text">{selectedNote.content}</pre>
+                                    <pre className="note-content-text">
+                                        {highlightSpaces
+                                            ? selectedNote.content.split(/( )/).map((part, idx) =>
+                                                  part === ' ' ? (
+                                                      <mark key={idx} className="red-space-mark">
+                                                          {' '}
+                                                      </mark>
+                                                  ) : (
+                                                      part
+                                                  ),
+                                              )
+                                            : selectedNote.content}
+                                    </pre>
                                 </div>
                             </div>
 

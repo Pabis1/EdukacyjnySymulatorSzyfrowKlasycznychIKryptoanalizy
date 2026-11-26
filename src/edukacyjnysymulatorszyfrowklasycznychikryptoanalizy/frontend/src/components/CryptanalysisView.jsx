@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
+import HighlightableTextarea from './HighlightableTextarea';
+import RedSpacesToggleButton from './RedSpacesToggleButton';
 import SpellcheckToggleButton from './SpellcheckToggleButton';
 
 const POLISH_ALPHABET = 'AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ';
@@ -180,6 +182,7 @@ export default function CryptanalysisView({
     const [shiftDelta, setShiftDelta] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(false);
 
     const matchAnalysis = useMemo(
         () => computeBestFrequencyMatch(analysisData),
@@ -510,6 +513,10 @@ export default function CryptanalysisView({
                             Szyfrogram do zbadania (Ciphertext)
                         </label>
                         <div className="field__header-actions">
+                            <RedSpacesToggleButton
+                                enabled={highlightSpaces}
+                                onToggle={() => setHighlightSpaces((prev) => !prev)}
+                            />
                             <SpellcheckToggleButton
                                 enabled={spellCheckEnabled}
                                 onToggle={() => setSpellCheckEnabled((prev) => !prev)}
@@ -520,7 +527,7 @@ export default function CryptanalysisView({
                         </div>
                     </div>
 
-                    <textarea
+                    <HighlightableTextarea
                         id="crypto-ciphertext-input"
                         className="text-area crypto-textarea"
                         rows={4}
@@ -529,6 +536,7 @@ export default function CryptanalysisView({
                         placeholder="Wklej tutaj zaszyfrowany tekst (np. Szyfr Cezara lub Vigenère'a)..."
                         autoComplete="off"
                         spellCheck={spellCheckEnabled}
+                        highlightSpaces={highlightSpaces}
                     />
                 </div>
 

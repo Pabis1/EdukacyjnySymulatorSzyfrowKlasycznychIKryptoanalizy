@@ -3,8 +3,10 @@ import './App.css';
 import CaesarShiftVisualizer from './components/CaesarShiftVisualizer';
 import CipherHistoryInfo from './components/CipherHistoryInfo';
 import CryptanalysisView from './components/CryptanalysisView';
+import HighlightableTextarea from './components/HighlightableTextarea';
 import NotesManagementPanel from './components/NotesManagementPanel';
 import PlayfairSimulator from './components/PlayfairSimulator';
+import RedSpacesToggleButton from './components/RedSpacesToggleButton';
 import SpellcheckToggleButton from './components/SpellcheckToggleButton';
 
 const INITIAL_NOTES = [
@@ -227,6 +229,7 @@ function CaesarSimulator({
     const [, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
     const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(false);
 
     const modeConfig = MODES[mode];
 
@@ -358,12 +361,18 @@ function CaesarSimulator({
                                     <label className="label" htmlFor="caesar-input-text">
                                         {modeConfig.inputLabel}
                                     </label>
-                                    <SpellcheckToggleButton
-                                        enabled={spellCheckEnabled}
-                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
-                                    />
+                                    <div className="field__header-actions">
+                                        <RedSpacesToggleButton
+                                            enabled={highlightSpaces}
+                                            onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                        />
+                                        <SpellcheckToggleButton
+                                            enabled={spellCheckEnabled}
+                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                        />
+                                    </div>
                                 </div>
-                                <textarea
+                                <HighlightableTextarea
                                     id="caesar-input-text"
                                     className="text-area"
                                     rows={3}
@@ -372,6 +381,7 @@ function CaesarSimulator({
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
                                     spellCheck={spellCheckEnabled}
+                                    highlightSpaces={highlightSpaces}
                                 />
                             </div>
 
@@ -458,7 +468,7 @@ function CaesarSimulator({
                                     </div>
                                 )}
                             </div>
-                            <textarea
+                            <HighlightableTextarea
                                 id="caesar-result-text"
                                 className="text-area text-area--result"
                                 rows={3}
@@ -466,6 +476,7 @@ function CaesarSimulator({
                                 spellCheck={false}
                                 value={result}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
+                                highlightSpaces={highlightSpaces}
                             />
 
                             {cipherPackage?.metadata && (
@@ -511,6 +522,7 @@ function VigenereSimulator({
     const [, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
     const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(false);
 
     const modeConfig = MODES[mode];
 
@@ -643,12 +655,18 @@ function VigenereSimulator({
                                     <label className="label" htmlFor="vigenere-input-text">
                                         {modeConfig.inputLabel}
                                     </label>
-                                    <SpellcheckToggleButton
-                                        enabled={spellCheckEnabled}
-                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
-                                    />
+                                    <div className="field__header-actions">
+                                        <RedSpacesToggleButton
+                                            enabled={highlightSpaces}
+                                            onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                        />
+                                        <SpellcheckToggleButton
+                                            enabled={spellCheckEnabled}
+                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                        />
+                                    </div>
                                 </div>
-                                <textarea
+                                <HighlightableTextarea
                                     id="vigenere-input-text"
                                     className="text-area"
                                     rows={3}
@@ -657,6 +675,7 @@ function VigenereSimulator({
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
                                     spellCheck={spellCheckEnabled}
+                                    highlightSpaces={highlightSpaces}
                                 />
                             </div>
 
@@ -742,7 +761,7 @@ function VigenereSimulator({
                                     </div>
                                 )}
                             </div>
-                            <textarea
+                            <HighlightableTextarea
                                 id="vigenere-result-text"
                                 className="text-area text-area--result"
                                 rows={3}
@@ -750,6 +769,7 @@ function VigenereSimulator({
                                 spellCheck={false}
                                 value={result}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas pisania..."
+                                highlightSpaces={highlightSpaces}
                             />
 
                             {cipherPackage?.metadata && (

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import CipherHistoryInfo from './CipherHistoryInfo';
+import HighlightableTextarea from './HighlightableTextarea';
 import PlayfairMatrixVisualizer from './PlayfairMatrixVisualizer';
+import RedSpacesToggleButton from './RedSpacesToggleButton';
 import SpellcheckToggleButton from './SpellcheckToggleButton';
 import { generatePlayfairMatrix } from '../utils/playfair';
 
@@ -147,6 +149,7 @@ export default function PlayfairSimulator({
     const [copied, setCopied] = useState(false);
     const [hoveredStepIdx, setHoveredStepIdx] = useState(null);
     const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
+    const [highlightSpaces, setHighlightSpaces] = useState(false);
 
     const modeConfig = MODES[mode];
 
@@ -357,12 +360,18 @@ export default function PlayfairSimulator({
                                     <label className="label" htmlFor="playfair-input-text">
                                         {modeConfig.inputLabel}
                                     </label>
-                                    <SpellcheckToggleButton
-                                        enabled={spellCheckEnabled}
-                                        onToggle={() => setSpellCheckEnabled((prev) => !prev)}
-                                    />
+                                    <div className="field__header-actions">
+                                        <RedSpacesToggleButton
+                                            enabled={highlightSpaces}
+                                            onToggle={() => setHighlightSpaces((prev) => !prev)}
+                                        />
+                                        <SpellcheckToggleButton
+                                            enabled={spellCheckEnabled}
+                                            onToggle={() => setSpellCheckEnabled((prev) => !prev)}
+                                        />
+                                    </div>
                                 </div>
-                                <textarea
+                                <HighlightableTextarea
                                     id="playfair-input-text"
                                     className="text-area"
                                     rows={4}
@@ -371,6 +380,7 @@ export default function PlayfairSimulator({
                                     placeholder={modeConfig.inputPlaceholder}
                                     autoComplete="off"
                                     spellCheck={spellCheckEnabled}
+                                    highlightSpaces={highlightSpaces}
                                 />
                             </div>
 
@@ -432,7 +442,7 @@ export default function PlayfairSimulator({
                                     </div>
                                 )}
                             </div>
-                            <textarea
+                            <HighlightableTextarea
                                 id="playfair-result-text"
                                 className="text-area text-area--result"
                                 rows={4}
@@ -440,6 +450,7 @@ export default function PlayfairSimulator({
                                 spellCheck={false}
                                 value={result}
                                 placeholder="Wynik pojawi się tutaj automatycznie podczas wprowadzania tekstu..."
+                                highlightSpaces={highlightSpaces}
                             />
 
                             {cipherPackage?.metadata && (
