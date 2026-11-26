@@ -1,4 +1,5 @@
 from .analysis import (
+    CaesarRanking,
     CharTrigramModel,
     RankedCandidate,
     caesar_brute_force,
@@ -23,6 +24,7 @@ __all__ = [
     "LANGUAGES",
     "BaseCipher",
     "CaesarCipher",
+    "CaesarRanking",
     "CharTrigramModel",
     "CipherResult",
     "CipherStep",

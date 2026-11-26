@@ -69,6 +69,15 @@ class CharTrigramModel:
                     log_probs[ab + c] = math.log(w3 * p3 + w2 * p2 + w1 * p1)
         return cls(alphabet=alphabet, log_probs=log_probs)
 
+    @property
+    def vocab_size(self) -> int:
+        """Number of symbols the model predicts: the alphabet plus 'FOREIGN_LETTER' and 'SEPARATOR'."""
+        return len(self.alphabet) + 2
+
+    def scored_positions(self, text: str) -> int:
+        """Number of symbols 'log_likelihood' scores for 'text' (letters plus separators)."""
+        return len(normalize(text, self.alphabet)) - 1
+
     def log_likelihood(self, text: str) -> float:
         """Total natural-log probability of 'text' (the separator padding on both ends is included)."""
         tokens = SEPARATOR + normalize(text, self.alphabet)
